@@ -1,6 +1,7 @@
 const restAddresses = [
-  'https://rest-address-1.com',
-  'https://rest-address-2.com',
+  'https://rest-osmosis.ecostake.com',
+  'https://osmosis-api.lavenderfive.com:443',
+  'https://osmosis-lcd.quickapi.com:443',
   // add more as needed
 ];
 

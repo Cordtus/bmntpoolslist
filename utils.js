@@ -1,6 +1,5 @@
 const fs = require('fs');
 const path = require('path');
-const fetch = require('node-fetch');
 
 const dataPath = path.join(__dirname, 'data', 'pools.json');
 
@@ -46,6 +45,8 @@ function writePoolsFile(data) {
 
 // Run HTTP request
 async function fetchPoolData(restAddress, poolId) {
+    const fetch = (await import('node-fetch')).default;
+
     const url = `${restAddress}/osmosis/poolmanager/v1beta1/pools/${poolId}`;
     try {
         const response = await fetch(url);

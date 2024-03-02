@@ -6,6 +6,7 @@ async function fetchAndProcessPoolData(startingPoolId) {
   let restAddressIndex = 0;
   let consecutiveFailures = 0;
   let fiveMinWaitCount = 0;
+  const maxRetries = 5; // Maximum number of retries before skipping to the next pool ID or rest address
 
   const existingData = readPoolsFile() || { pools: [] };
   if (existingData.pools.length > 0) {
@@ -16,7 +17,7 @@ async function fetchAndProcessPoolData(startingPoolId) {
     console.log('Starting with pool ID 1');
   }
 
-  while (true) {
+  while (consecutiveFailures <= maxRetries) {
     try {
       console.log(`Fetching data for pool ID ${poolId} from address index ${restAddressIndex}`);
       const responseData = await fetchPoolData(restAddresses[restAddressIndex], poolId);
@@ -27,6 +28,7 @@ async function fetchAndProcessPoolData(startingPoolId) {
         console.log(`Successfully processed and saved pool ID ${poolId}`);
         poolId++;
         consecutiveFailures = 0; // Reset on success
+        restAddressIndex = 0; // Reset to first REST address on success
       } else {
         throw new Error('Invalid JSON response');
       }
@@ -34,6 +36,11 @@ async function fetchAndProcessPoolData(startingPoolId) {
       console.error(`Error fetching data for pool ID ${poolId}:`, error.message);
       consecutiveFailures++;
       restAddressIndex = (restAddressIndex + 1) % restAddresses.length; // Cycle through rest addresses
+      if (consecutiveFailures >= maxRetries) {
+        console.log(`Max retries reached for pool ID ${poolId}. Skipping to next pool ID.`);
+        poolId++; // Skip to next pool ID after max retries
+        consecutiveFailures = 0; // Reset failure count for the new pool ID
+      }
       fiveMinWaitCount = await handleFailuresAndDelays(consecutiveFailures, fiveMinWaitCount); // Update wait count based on retries
     }
     await new Promise(resolve => setTimeout(resolve, 1000)); // 1-second delay between requests
@@ -81,3 +88,7 @@ async function handleFailuresAndDelays(consecutiveFailures, fiveMinWaitCount) {
   }
   return fiveMinWaitCount; // Return current count if no wait was triggered
 }
+
+fetchAndProcessPoolData(1)
+  .then(() => console.log('Processing completed.'))
+  .catch((error) => console.error('An error occurred:', error));

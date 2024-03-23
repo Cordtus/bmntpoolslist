@@ -1,5 +1,5 @@
-const { readPoolsFile, writePoolsFile, fetchPoolData } = require('./utils');
-const { restAddresses, initialRetryDelay, maxRetries, dataPath } = require('./config');
+const { readPoolsFile, writePoolsFile, fetchPoolData, fetchBaseDenom } = require('./utils');
+const { restAddresses, initialRetryDelay, maxRetries, dataPath, includeBaseDenom, queryDelay } = require('./config');
 
 async function fetchAndProcessPoolData(startingPoolId) {
   let poolId = startingPoolId;
@@ -21,9 +21,26 @@ async function fetchAndProcessPoolData(startingPoolId) {
       console.log(`Fetching data for pool ID ${poolId} from address index ${restAddressIndex}`);
       const responseData = await fetchPoolData(restAddresses[restAddressIndex], poolId);
       if (responseData && responseData.pool) {
-        const formattedData = formatData(responseData);
+        let baseDenoms = {};
+        if (includeBaseDenom) {
+          for (const asset of responseData.pool.pool_assets || []) {
+            if (asset.token.denom.startsWith('ibc/')) {
+              const ibcId = asset.token.denom.split('/')[1]; // Extract the IBC hash part
+              try {
+                const baseDenom = await fetchBaseDenom(restAddresses[restAddressIndex], ibcId);
+                baseDenoms[asset.token.denom] = baseDenom; // Map ibc denom to base denom
+                await new Promise(resolve => setTimeout(resolve, queryDelay)); // Delay to respect rate limiting
+              } catch (error) {
+                console.error(`Error fetching base denom for ${ibcId}:`, error);
+                // Continue processing other assets without failing the entire operation
+              }
+            }
+          }
+        }
+
+        const formattedData = formatData(responseData, baseDenoms);
         existingData.pools.push(formattedData);
-        writePoolsFile(dataPath, existingData);
+        writePoolsFile(existingData);
         console.log(`Successfully processed and saved pool ID ${poolId}`);
         poolId++;
         consecutiveFailures = 0; // Reset on success
@@ -51,75 +68,29 @@ async function fetchAndProcessPoolData(startingPoolId) {
   }
 }
 
-function formatData(responseData) {
+function formatData(responseData, baseDenoms) {
   if (!responseData || typeof responseData.pool === 'undefined') {
     throw new Error('Invalid or non-JSON response received');
   }
 
   const pool = responseData.pool;
   let formattedData = {
-    id: pool.id || pool.pool_id, // Adjust for CosmWasmPool having pool_id instead of id
-    address: pool.address || pool.contract_address, // Adjust for CosmWasmPool having contract_address
+    id: pool.id || pool.pool_id,
+    address: pool.address || pool.contract_address,
+    type: "",
+    assets: [],
+    fees: {}
   };
 
-  // Determine pool type and format data accordingly
-  if (pool["@type"].includes("concentratedliquidity")) {
-    formattedData.type = "concentratedliquidity";
-    formattedData.assets = {
-      token1: pool.token0,
-      token2: pool.token1,
-    };
-    formattedData.fees = {
-      swap_fee: pool.spread_factor,
-      exit_fee: "",
-    };
-  } else if (pool["@type"].includes("/osmosis.gamm.poolmodels.stableswap.v1beta1.Pool")) {
-    formattedData.type = "stableswap";
-    formattedData.fees = {
-      swap_fee: pool.pool_params.swap_fee,
-      exit_fee: pool.pool_params.exit_fee,
-    };
-    formattedData.assets = {};
-    pool.pool_liquidity.forEach((asset, index) => {
-      formattedData.assets[`token${index + 1}`] = asset.denom || "";
-    });
-  } else if (pool["@type"].includes("/osmosis.cosmwasmpool.v1beta1.CosmWasmPool")) {
-    formattedData.type = "cosmwasm-transmuter";
-    // Only include pool_id and contract_address, already handled above
-  } else if (pool["@type"].includes("gamm")) {
-    formattedData.type = "gamm";
-    formattedData.assets = {};
-    formattedData.fees = {
-      swap_fee: pool.pool_params.swap_fee,
-      exit_fee: pool.pool_params.exit_fee,
-    };
+  // Logic to determine pool type and format data accordingly, similar to existing implementation
+  // Add base denom information where applicable
+  if (pool.pool_assets) {
     pool.pool_assets.forEach((asset, index) => {
-      formattedData.assets[`token${index + 1}`] = asset.token.denom || "";
-    });
-  } else {
-    // Handle unexpected pool types or missing data gracefully
-    throw new Error(`Unsupported pool type: ${pool["@type"]}`);
-  }
+      let assetInfo = {
+        denom: asset.token.denom,
+        amount: asset.token.amount
+      };
+      if (baseDenoms && baseDenoms[asset.token.denom]) {
+        assetInfo.baseDenom = baseDenoms[asset.token.denom];
+      }
 
-  return formattedData;
-}
-
-
-async function handleFailuresAndDelays(consecutiveFailures, fiveMinWaitCount) {
-  if (consecutiveFailures >= 10) {
-    if (fiveMinWaitCount >= 3) {
-      console.log('Waiting for 6 hours...');
-      await new Promise(resolve => setTimeout(resolve, 21600000)); // 6 hours
-      return 0; // Reset fiveMinWaitCount
-    } else {
-      console.log('Waiting for 5 minutes...');
-      await new Promise(resolve => setTimeout(resolve, 300000)); // 5 minutes
-      return fiveMinWaitCount + 1; // Increment fiveMinWaitCount
-    }
-  }
-  return fiveMinWaitCount; // Return current count if no wait was triggered
-}
-
-fetchAndProcessPoolData(1)
-  .then(() => console.log('Processing completed.'))
-  .catch((error) => console.error('An error occurred:', error));

@@ -1,50 +1,35 @@
+// Import necessary functions from utils and configurations from config
 const { readPoolsFile, writePoolsFile, fetchPoolData, fetchBaseDenom } = require('./utils');
-const { restAddresses, initialRetryDelay, maxRetries, dataPath, includeBaseDenom, queryDelay } = require('./config');
+const { restAddresses, initialRetryDelay, maxRetries, includeBaseDenom, queryDelay } = require('./config');
 
 async function fetchAndProcessPoolData(startingPoolId) {
   let poolId = startingPoolId;
   let retryDelay = initialRetryDelay;
   let restAddressIndex = 0;
   let consecutiveFailures = 0;
-
-  const existingData = readPoolsFile(dataPath) || { pools: [] };
-  if (existingData.pools.length > 0) {
-    const lastPool = existingData.pools[existingData.pools.length - 1];
-    poolId = parseInt(lastPool.id) + 1;
-    console.log(`Resuming from pool ID ${poolId}`);
-  } else {
-    console.log('Starting with pool ID 1');
-  }
-
+  
+  // Load existing data or initialize an empty array for pools
+  const existingData = readPoolsFile() || { pools: [] };
+  
   while (true) {
     try {
       console.log(`Fetching data for pool ID ${poolId} from address index ${restAddressIndex}`);
       const responseData = await fetchPoolData(restAddresses[restAddressIndex], poolId);
+      
       if (responseData && responseData.pool) {
-        let baseDenoms = {};
+        let formattedData = formatData(responseData);
+        
+        // Enrich formattedData with base denomination if configured to do so
         if (includeBaseDenom) {
-          for (const asset of responseData.pool.pool_assets || []) {
-            if (asset.token.denom.startsWith('ibc/')) {
-              const ibcId = asset.token.denom.split('/')[1]; // Extract the IBC hash part
-              try {
-                const baseDenom = await fetchBaseDenom(restAddresses[restAddressIndex], ibcId);
-                baseDenoms[asset.token.denom] = baseDenom; // Map ibc denom to base denom
-                await new Promise(resolve => setTimeout(resolve, queryDelay)); // Delay to respect rate limiting
-              } catch (error) {
-                console.error(`Error fetching base denom for ${ibcId}:`, error);
-                // Continue processing other assets without failing the entire operation
-              }
-            }
-          }
+          await enrichWithBaseDenom(formattedData, restAddresses[restAddressIndex]);
         }
-
-        const formattedData = formatData(responseData, baseDenoms);
+        
         existingData.pools.push(formattedData);
         writePoolsFile(existingData);
         console.log(`Successfully processed and saved pool ID ${poolId}`);
-        poolId++;
-        consecutiveFailures = 0; // Reset on success
-        restAddressIndex = 0; // Reset to first REST address on success
+        
+        poolId++; // Proceed to the next pool ID
+        consecutiveFailures = 0; // Reset failure counter on success
         retryDelay = initialRetryDelay; // Reset retry delay on success
       } else {
         throw new Error('Invalid JSON response');
@@ -52,23 +37,40 @@ async function fetchAndProcessPoolData(startingPoolId) {
     } catch (error) {
       console.error(`Error fetching data for pool ID ${poolId}:`, error.message);
       consecutiveFailures++;
+      
       if (consecutiveFailures < maxRetries) {
-        // Wait for retryDelay before next attempt
         await new Promise(resolve => setTimeout(resolve, retryDelay));
-        retryDelay *= 2; // Double the retry delay for exponential backoff
+        retryDelay *= 2; // Exponential backoff
       } else {
         console.log(`Max retries reached for pool ID ${poolId}. Skipping to next pool ID.`);
         poolId++;
-        consecutiveFailures = 0; // Reset failure count for the new pool ID
-        retryDelay = initialRetryDelay; // Reset retry delay for the new pool ID
+        consecutiveFailures = 0;
+        retryDelay = initialRetryDelay;
       }
-      restAddressIndex = (restAddressIndex + 1) % restAddresses.length; // Cycle through rest addresses
+      
+      restAddressIndex = (restAddressIndex + 1) % restAddresses.length;
     }
-    await new Promise(resolve => setTimeout(resolve, 100)); // Short delay between loop iterations
+    
+    await new Promise(resolve => setTimeout(resolve, 100)); // Short delay between iterations to control the loop's pace
   }
 }
 
-function formatData(responseData, baseDenoms) {
+async function enrichWithBaseDenom(formattedData, restAddress) {
+  for (const asset of formattedData.assets) {
+    if (asset.denom.startsWith('ibc/')) {
+      const ibcId = asset.denom.split('/')[1]; // Correctly extract the IBC hash
+      try {
+        const baseDenom = await fetchBaseDenom(restAddress, ibcId); // Fetch the base denomination
+        asset.baseDenom = baseDenom; // Append base denomination to the asset
+        await new Promise(resolve => setTimeout(resolve, queryDelay)); // Wait to avoid rate limiting
+      } catch (error) {
+        console.error(`Error fetching base denom for ${asset.denom}:`, error);
+      }
+    }
+  }
+}
+
+function formatData(responseData) {
   if (!responseData || typeof responseData.pool === 'undefined') {
     throw new Error('Invalid or non-JSON response received');
   }
@@ -77,20 +79,22 @@ function formatData(responseData, baseDenoms) {
   let formattedData = {
     id: pool.id || pool.pool_id,
     address: pool.address || pool.contract_address,
-    type: "",
-    assets: [],
-    fees: {}
+    type: pool["@type"].includes("concentratedliquidity") ? "concentratedliquidity" : "gamm",
+    assets: pool.pool_assets.map((asset, index) => ({
+      denom: asset.token.denom,
+      amount: asset.token.amount
+    })),
+    fees: {
+      swap_fee: pool["@type"].includes("concentratedliquidity") ? pool.spread_factor : pool.pool_params.swap_fee,
+      exit_fee: pool["@type"].includes("gamm") ? pool.pool_params.exit_fee : "",
+    }
   };
 
-  // Logic to determine pool type and format data accordingly, similar to existing implementation
-  // Add base denom information where applicable
-  if (pool.pool_assets) {
-    pool.pool_assets.forEach((asset, index) => {
-      let assetInfo = {
-        denom: asset.token.denom,
-        amount: asset.token.amount
-      };
-      if (baseDenoms && baseDenoms[asset.token.denom]) {
-        assetInfo.baseDenom = baseDenoms[asset.token.denom];
-      }
+  console.log(`Formatted data for pool ID ${pool.id}:`, formattedData);
+  return formattedData;
+}
 
+// Start the data fetching and processing with the first pool ID
+fetchAndProcessPoolData(1)
+  .then(() => console.log('Processing completed.'))
+  .catch((error) => console.error('An error occurred:', error));

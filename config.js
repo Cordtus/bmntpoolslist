@@ -1,7 +1,17 @@
 const restAddresses = [
-  'https://rest-address-1.com',
-  'https://rest-address-2.com',
-  // add more as needed
+  'https://rest-osmosis.ecostake.com',
+  'https://osmosis-api.lavenderfive.com:443',
+  'https://osmosis-lcd.quickapi.com:443',
+  // Add more as needed
 ];
 
-module.exports = { restAddresses };
+const config = {
+  restAddresses,
+  dataPath: './data/pools.json', // Data location
+  initialRetryDelay: 1000, // Initial delay in milliseconds
+  maxRetries: 5, // Maximum number of retries
+  includeBaseDenom: true, // Option to include baseDenom field
+  queryDelay: 2000, // Delay between queries in milliseconds
+};
+
+module.exports = config;

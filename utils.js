@@ -1,6 +1,5 @@
 const fs = require('fs');
 const path = require('path');
-const fetch = require('node-fetch');
 
 const dataPath = path.join(__dirname, 'data', 'pools.json');
 
@@ -46,6 +45,8 @@ function writePoolsFile(data) {
 
 // Run HTTP request
 async function fetchPoolData(restAddress, poolId) {
+    const fetch = (await import('node-fetch')).default;
+
     const url = `${restAddress}/osmosis/poolmanager/v1beta1/pools/${poolId}`;
     try {
         const response = await fetch(url);
@@ -58,4 +59,19 @@ async function fetchPoolData(restAddress, poolId) {
     }
 }
 
-module.exports = { readPoolsFile, writePoolsFile, fetchPoolData };
+// Fetch base denom information
+async function fetchBaseDenom(restAddress, ibcId) {
+    const fetch = (await import('node-fetch')).default;
+    const url = `${restAddress}/ibc/apps/transfer/v1/denom_traces/${ibcId}`;
+    try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const { denom_trace } = await response.json();
+        return denom_trace.base_denom;
+    } catch (error) {
+        console.error("Fetch error:", error);
+        throw error;
+    }
+}
+
+module.exports = { readPoolsFile, writePoolsFile, fetchPoolData, fetchBaseDenom };

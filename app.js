@@ -1,58 +1,120 @@
 // Import necessary functions from utils and configurations from config
-const { readPoolsFile, writePoolsFile, fetchPoolData, fetchBaseDenom } = require('./utils');
-const { restAddresses, initialRetryDelay, maxRetries, includeBaseDenom, queryDelay } = require('./config');
+const { queryCosmWasmPool, fetchRestAddresses, readPoolsFile, writePoolsFile, fetchPoolData, fetchBaseDenom } = require('./utils');
+const { initialRetryDelay, maxRetries, includeBaseDenom, queryDelay } = require('./config');
+
+async function initializeApp() {
+  try {
+      const addresses = await fetchRestAddresses();
+      if (addresses.length > 0) {
+          restAddresses = addresses; // Update the global restAddresses array
+      } else {
+          console.log("Using default REST addresses due to fetching failure.");
+      }
+      // Start the data fetching and processing with the first pool ID
+      fetchAndProcessPoolData(1)
+          .then(() => console.log('Processing completed.'))
+          .catch((error) => console.error('An error occurred:', error));
+  } catch (error) {
+      console.error('Error during application initialization:', error);
+  }
+}
+
+// Call initializeApp to start everything
+initializeApp();
+
+const nodeStatus = {}; // Keeps track of node health and blackout status
 
 async function fetchAndProcessPoolData(startingPoolId) {
   let poolId = startingPoolId;
-  let retryDelay = initialRetryDelay;
   let restAddressIndex = 0;
-  let consecutiveFailures = 0;
-  
+  let retries = 0;
+  const maxNodeFailures = 3; // Threshold for blacklisting a node
+  const blacklistDuration = 3600000; // 1 hour in milliseconds
+
   // Load existing data or initialize an empty array for pools
   const existingData = readPoolsFile() || { pools: [] };
-  
+
   while (true) {
+    const currentAddress = restAddresses[restAddressIndex];
+    if (nodeStatus[currentAddress] && Date.now() - nodeStatus[currentAddress].blacklistedAt < blacklistDuration) {
+      // Skip blacklisted nodes
+      restAddressIndex = (restAddressIndex + 1) % restAddresses.length;
+      continue;
+    }
+
     try {
-      console.log(`Fetching data for pool ID ${poolId} from address index ${restAddressIndex}`);
-      const responseData = await fetchPoolData(restAddresses[restAddressIndex], poolId);
-      
+      console.log(`Fetching data for pool ID ${poolId} from address ${currentAddress}`);
+      const responseData = await fetchPoolData(currentAddress, poolId);
+
       if (responseData && responseData.pool) {
         let formattedData = formatData(responseData);
-        
-        // Enrich formattedData with base denomination if configured to do so
         if (includeBaseDenom) {
-          await enrichWithBaseDenom(formattedData, restAddresses[restAddressIndex]);
+          await enrichWithBaseDenom(formattedData, currentAddress);
         }
         
         existingData.pools.push(formattedData);
         writePoolsFile(existingData);
         console.log(`Successfully processed and saved pool ID ${poolId}`);
-        
-        poolId++; // Proceed to the next pool ID
-        consecutiveFailures = 0; // Reset failure counter on success
-        retryDelay = initialRetryDelay; // Reset retry delay on success
+
+        poolId++; // Move to the next pool ID
+        retries = 0; // Reset retries for next ID
+        nodeStatus[currentAddress] = { failures: 0 }; // Reset failures on success
       } else {
         throw new Error('Invalid JSON response');
       }
     } catch (error) {
       console.error(`Error fetching data for pool ID ${poolId}:`, error.message);
-      consecutiveFailures++;
-      
-      if (consecutiveFailures < maxRetries) {
-        await new Promise(resolve => setTimeout(resolve, retryDelay));
-        retryDelay *= 2; // Exponential backoff
-      } else {
-        console.log(`Max retries reached for pool ID ${poolId}. Skipping to next pool ID.`);
-        poolId++;
-        consecutiveFailures = 0;
-        retryDelay = initialRetryDelay;
+      retries++;
+      nodeStatus[currentAddress] = nodeStatus[currentAddress] || { failures: 0, blacklistedAt: 0 };
+      nodeStatus[currentAddress].failures++;
+
+      if (nodeStatus[currentAddress].failures >= maxNodeFailures) {
+        nodeStatus[currentAddress].blacklistedAt = Date.now();
+        console.log(`Blacklisting ${currentAddress} due to repeated failures.`);
       }
-      
+
+      // Cycle to next address
       restAddressIndex = (restAddressIndex + 1) % restAddresses.length;
+      if (retries >= restAddresses.length) {
+        console.log(`All nodes have been tried for pool ID ${poolId}. Skipping to next pool ID.`);
+        poolId++; // Skip this pool ID after all nodes have failed
+        retries = 0; // Reset retries for the new pool ID
+      }
     }
-    
-    await new Promise(resolve => setTimeout(resolve, 100)); // Short delay between iterations to control the loop's pace
+
+    await new Promise(resolve => setTimeout(resolve, 100)); // Short delay between iterations
   }
+}
+
+async function processCosmWasmPool(poolData, restAddress) {
+  const { contract_address: contractAddress, pool_id: poolId } = poolData;
+  const query = { "get_total_pool_liquidity": {} };
+  const cwResponse = await queryCosmWasmPool(restAddress, contractAddress, query);
+  const liquidityData = cwResponse.data.total_pool_liquidity;
+
+  let assets = [];
+  for (let asset of liquidityData) {
+      let baseDenom = asset.denom;
+      if (asset.denom.startsWith('ibc/')) {
+          baseDenom = await fetchBaseDenom(restAddress, asset.denom.split('/')[1]); // Assuming fetchBaseDenom handles IBC hashing.
+      }
+      assets.push({
+          denom: asset.denom,
+          amount: asset.amount,
+          baseDenom: baseDenom || undefined
+      });
+  }
+
+  return {
+      id: poolId,
+      address: contractAddress,
+      type: "cosmwasm",
+      assets: assets,
+      fees: {
+          swap_fee: "Unknown",
+          exit_fee: "Unknown"
+      }
+  };
 }
 
 async function enrichWithBaseDenom(formattedData, restAddress) {

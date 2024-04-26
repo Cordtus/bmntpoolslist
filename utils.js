@@ -1,7 +1,40 @@
 const fs = require('fs');
 const path = require('path');
+const { Buffer } = require('buffer');
 
 const dataPath = path.join(__dirname, 'data', 'pools.json');
+
+function encodeQuery(query) {
+    return Buffer.from(JSON.stringify(query)).toString('base64');
+}
+async function queryCosmWasmPool(restAddress, contractAddress, query) {
+    const encodedQuery = encodeQuery(query);
+    const url = `${restAddress}/cosmwasm/wasm/v1/contract/${contractAddress}/smart/${encodedQuery}`;
+    try {
+        const fetch = (await import('node-fetch')).default;
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        return await response.json();
+    } catch (error) {
+        console.error("Error querying CosmWasm pool:", error);
+        throw error;
+    }
+}
+
+async function fetchRestAddresses() {
+    const fetch = (await import('node-fetch')).default;
+    const url = 'https://raw.githubusercontent.com/cosmos/chain-registry/master/osmosis/chain.json';
+    
+    try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const json = await response.json();
+        return json.apis.rest.map(api => api.address).filter(Boolean);
+    } catch (error) {
+        console.error("Failed to fetch REST addresses:", error);
+        return [];  // Return an empty array or some default addresses as fallback
+    }
+}
 
 // Ensure the 'data' directory exists
 function ensureDataDirectory() {
@@ -43,16 +76,18 @@ function writePoolsFile(data) {
     }
 }
 
-// Run HTTP request
 async function fetchPoolData(restAddress, poolId) {
     const fetch = (await import('node-fetch')).default;
-
     const url = `${restAddress}/osmosis/poolmanager/v1beta1/pools/${poolId}`;
     try {
         const response = await fetch(url);
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        const data = await response.json();
-        return data;
+        const json = await response.text();
+        try {
+            return JSON.parse(json);
+        } catch (e) {
+            throw new Error('Failed to parse JSON response.');
+        }
     } catch (error) {
         console.error("Fetch error:", error);
         throw error;
@@ -74,4 +109,4 @@ async function fetchBaseDenom(restAddress, ibcId) {
     }
 }
 
-module.exports = { readPoolsFile, writePoolsFile, fetchPoolData, fetchBaseDenom };
+module.exports = { queryCosmWasmPool, fetchRestAddresses, readPoolsFile, writePoolsFile, fetchPoolData, fetchBaseDenom };

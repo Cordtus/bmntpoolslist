@@ -1,0 +1,28 @@
+{
+  "name": "bmntpoolslist",
+  "version": "1.0.0",
+  "description": "pools scraper and basic info indexing",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Cordtus/bmntpoolslist.git"
+  },
+  "keywords": [
+    "Osmosis",
+    "Liquidity",
+    "Pools",
+    "Tracker"
+  ],
+  "author": "Cordt Hanson",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Cordtus/bmntpoolslist/issues"
+  },
+  "homepage": "https://github.com/Cordtus/bmntpoolslist#readme",
+  "dependencies": {
+    "node-fetch": "^3.3.2"
+  }
+}

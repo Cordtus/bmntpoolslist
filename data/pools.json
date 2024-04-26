@@ -1,0 +1,1281 @@
+{
+  "pools": [
+    {
+      "id": "1",
+      "address": "osmo1mw0ac6rwlp5r8wapwk3zs6g29h8fcscxqakdzw9emkne6c8wjp9q0t3v8t",
+      "type": "gamm",
+      "assets": [
+        {
+          "denom": "ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2",
+          "amount": "708248615955",
+          "baseDenom": "uatom"
+        },
+        {
+          "denom": "uosmo",
+          "amount": "6360372097147"
+        }
+      ],
+      "fees": {
+        "swap_fee": "0.002000000000000000",
+        "exit_fee": "0.000000000000000000"
+      }
+    },
+    {
+      "id": "2",
+      "address": "osmo1500hy75krs9e8t50aav6fahk8sxhajn9ctp40qwvvn8tcprkk6wszun4a5",
+      "type": "gamm",
+      "assets": [
+        {
+          "denom": "uion",
+          "amount": "364404904"
+        },
+        {
+          "denom": "uosmo",
+          "amount": "34889651376"
+        }
+      ],
+      "fees": {
+        "swap_fee": "0.005000000000000000",
+        "exit_fee": "0.000000000000000000"
+      }
+    },
+    {
+      "id": "3",
+      "address": "osmo1c9gj5nwxhuh2gz7wwg4r8e8tw8v7ggy9lh2hu7kkdgh0t450754qh9cpvd",
+      "type": "gamm",
+      "assets": [
+        {
+          "denom": "ibc/1480B8FD20AD5FCAE81EA87584D269547DD4D436843C1D20F15E00EB64743EF4",
+          "amount": "82241649186",
+          "baseDenom": "uakt"
+        },
+        {
+          "denom": "uosmo",
+          "amount": "406624214997"
+        }
+      ],
+      "fees": {
+        "swap_fee": "0.002000000000000000",
+        "exit_fee": "0.000000000000000000"
+      }
+    },
+    {
+      "id": "4",
+      "address": "osmo1lzwv0glchfcw0fpwzdwfdsepmvluv6z6eh4qunxdml33sj06q3yq7xwtde",
+      "type": "gamm",
+      "assets": [
+        {
+          "denom": "ibc/1480B8FD20AD5FCAE81EA87584D269547DD4D436843C1D20F15E00EB64743EF4",
+          "amount": "173536523825",
+          "baseDenom": "uakt"
+        },
+        {
+          "denom": "ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2",
+          "amount": "49408456328",
+          "baseDenom": "uatom"
+        }
+      ],
+      "fees": {
+        "swap_fee": "0.003000000000000000",
+        "exit_fee": "0.000000000000000000"
+      }
+    },
+    {
+      "id": "5",
+      "address": "osmo1j5l9ysw5xv0uqz9uh7mcg0l5rlerqm695ec9kkg2t8rp600zv47q82eqwa",
+      "type": "gamm",
+      "assets": [
+        {
+          "denom": "ibc/9712DBB13B9631EDFA9BF61B55F1B2D290B2ADB67E3A4EB3A875F3B6081B3B84",
+          "amount": "121222828508957",
+          "baseDenom": "udvpn"
+        },
+        {
+          "denom": "uosmo",
+          "amount": "185256073507"
+        }
+      ],
+      "fees": {
+        "swap_fee": "0.002000000000000000",
+        "exit_fee": "0.000000000000000000"
+      }
+    },
+    {
+      "id": "6",
+      "address": "osmo1p0rpttlp8v2hy7m82l2t9p6545788f2ac3yksgrlycke2wr4mu0qdr7ytu",
+      "type": "gamm",
+      "assets": [
+        {
+          "denom": "ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2",
+          "amount": "11219288312",
+          "baseDenom": "uatom"
+        },
+        {
+          "denom": "ibc/9712DBB13B9631EDFA9BF61B55F1B2D290B2ADB67E3A4EB3A875F3B6081B3B84",
+          "amount": "154198465562530",
+          "baseDenom": "udvpn"
+        }
+      ],
+      "fees": {
+        "swap_fee": "0.003000000000000000",
+        "exit_fee": "0.000000000000000000"
+      }
+    },
+    {
+      "id": "7",
+      "address": "osmo13jr3p5p070h4pu7sxhtldag9899sev9pwx0r2vlvpkyravpxlqssnzsuq9",
+      "type": "gamm",
+      "assets": [
+        {
+          "denom": "ibc/7C4D60AA95E5A7558B0A364860979CA34B7FF8AAF255B87AF9E879374470CEC0",
+          "amount": "919531285095",
+          "baseDenom": "uiris"
+        },
+        {
+          "denom": "uosmo",
+          "amount": "28740767951"
+        }
+      ],
+      "fees": {
+        "swap_fee": "0.002000000000000000",
+        "exit_fee": "0.000000000000000000"
+      }
+    },
+    {
+      "id": "8",
+      "address": "osmo1605py4r32r73csszlqpz6n5t5sgax9gjjfnm68jnd7pv6qe4l54ql0w8ku",
+      "type": "gamm",
+      "assets": [
+        {
+          "denom": "ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2",
+          "amount": "10134084829",
+          "baseDenom": "uatom"
+        },
+        {
+          "denom": "ibc/7C4D60AA95E5A7558B0A364860979CA34B7FF8AAF255B87AF9E879374470CEC0",
+          "amount": "1934173886713",
+          "baseDenom": "uiris"
+        }
+      ],
+      "fees": {
+        "swap_fee": "0.003000000000000000",
+        "exit_fee": "0.000000000000000000"
+      }
+    },
+    {
+      "id": "9",
+      "address": "osmo19fm8jtzyw8ujsnsqm5rznudn8fhhkykjh4ra8rvx9lsfslw2pc2sp36h3r",
+      "type": "gamm",
+      "assets": [
+        {
+          "denom": "ibc/E6931F78057F7CC5DA0FD6CEF82FF39373A6E0452BF1FD76910B93292CF356C1",
+          "amount": "270479143063797",
+          "baseDenom": "basecro"
+        },
+        {
+          "denom": "uosmo",
+          "amount": "364686472601"
+        }
+      ],
+      "fees": {
+        "swap_fee": "0.002000000000000000",
+        "exit_fee": "0.000000000000000000"
+      }
+    },
+    {
+      "id": "10",
+      "address": "osmo1krp38zzc3zz5as9ndqkyskhkzv6x9e30ckcq5g4lcsu5wpwcqy0sa3dea2",
+      "type": "gamm",
+      "assets": [
+        {
+          "denom": "ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2",
+          "amount": "13566787698",
+          "baseDenom": "uatom"
+        },
+        {
+          "denom": "ibc/E6931F78057F7CC5DA0FD6CEF82FF39373A6E0452BF1FD76910B93292CF356C1",
+          "amount": "89951902599741",
+          "baseDenom": "basecro"
+        }
+      ],
+      "fees": {
+        "swap_fee": "0.003000000000000000",
+        "exit_fee": "0.000000000000000000"
+      }
+    },
+    {
+      "id": "11",
+      "address": "osmo1zka4v4c04jr74ludyls2lfzfttzx67qzd070xtnfq90yzyacgn9qv6vend",
+      "type": "gamm",
+      "assets": [
+        {
+          "denom": "uion",
+          "amount": "6278"
+        },
+        {
+          "denom": "uosmo",
+          "amount": "2367583"
+        }
+      ],
+      "fees": {
+        "swap_fee": "0.005000000000000000",
+        "exit_fee": "0.000000000000000000"
+      }
+    },
+    {
+      "id": "12",
+      "address": "osmo1f602n58fsvphaledcyyxeczukyee0dnum08psrqrl894s3cc57zq6jyvyq",
+      "type": "gamm",
+      "assets": [
+        {
+          "denom": "ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2",
+          "amount": "1258",
+          "baseDenom": "uatom"
+        },
+        {
+          "denom": "ibc/A0CC0CF735BFB30E730C70019D4218A1244FF383503FF7579C9201AB93CA9293",
+          "amount": "31685",
+          "baseDenom": "uxprt"
+        }
+      ],
+      "fees": {
+        "swap_fee": "0.003000000000000000",
+        "exit_fee": "0.000000000000000000"
+      }
+    },
+    {
+      "id": "13",
+      "address": "osmo15u5e6evufc9gjd28n4z9rvhku8lfg3arpejm0gnzhzx05w9h7e7q8665jn",
+      "type": "gamm",
+      "assets": [
+        {
+          "denom": "ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2",
+          "amount": "3195926891",
+          "baseDenom": "uatom"
+        },
+        {
+          "denom": "ibc/A0CC0CF735BFB30E730C70019D4218A1244FF383503FF7579C9201AB93CA9293",
+          "amount": "93160274125",
+          "baseDenom": "uxprt"
+        }
+      ],
+      "fees": {
+        "swap_fee": "0.003000000000000000",
+        "exit_fee": "0.000000000000000000"
+      }
+    },
+    {
+      "id": "14",
+      "address": "osmo1kpf2xfutvfqfum9aj2juvjcjcxzp7k3le389v6ql6lurzcq0hausa6uyx8",
+      "type": "gamm",
+      "assets": [
+        {
+          "denom": "ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2",
+          "amount": "1238278",
+          "baseDenom": "uatom"
+        },
+        {
+          "denom": "uion",
+          "amount": "28869"
+        }
+      ],
+      "fees": {
+        "swap_fee": "0.000000000000000000",
+        "exit_fee": "0.000000000000000000"
+      }
+    },
+    {
+      "id": "15",
+      "address": "osmo1qm24s5jk9mz8wtc5luad8fsenrp5v5m7prjmfhunm0plcyg74u2qrsr325",
+      "type": "gamm",
+      "assets": [
+        {
+          "denom": "ibc/A0CC0CF735BFB30E730C70019D4218A1244FF383503FF7579C9201AB93CA9293",
+          "amount": "114157234959",
+          "baseDenom": "uxprt"
+        },
+        {
+          "denom": "uosmo",
+          "amount": "35153954302"
+        }
+      ],
+      "fees": {
+        "swap_fee": "0.002000000000000000",
+        "exit_fee": "0.000000000000000000"
+      }
+    },
+    {
+      "id": "16",
+      "address": "osmo1hecg2sghe8y69el3r9s0ysvlgqrwhg626lwujq5wzh0hah8zsqgspe678n",
+      "type": "gamm",
+      "assets": [
+        {
+          "denom": "ibc/1DCC8A6CB5689018431323953344A9F6CC4D0BFB261E88C9F7777372C10CD076",
+          "amount": "98",
+          "baseDenom": "uregen"
+        },
+        {
+          "denom": "ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2",
+          "amount": "11",
+          "baseDenom": "uatom"
+        }
+      ],
+      "fees": {
+        "swap_fee": "0.005000000000000000",
+        "exit_fee": "0.000000000000000000"
+      }
+    },
+    {
+      "id": "17",
+      "address": "osmo1l45a67tujfxl99qt39a09cqf9ep0vtqyn8xnuua66yvjtc7e8lvsua2hjn",
+      "type": "gamm",
+      "assets": [
+        {
+          "denom": "ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2",
+          "amount": "4952"
+        },
+        {
+          "denom": "ibc/9712DBB13B9631EDFA9BF61B55F1B2D290B2ADB67E3A4EB3A875F3B6081B3B84",
+          "amount": "27234050"
+        }
+      ],
+      "fees": {
+        "swap_fee": "0.003000000000000000",
+        "exit_fee": "0.000000000000000000"
+      }
+    },
+    {
+      "id": "18",
+      "address": "osmo17ff0mxg5j6xtuh7ma623ejcntuzuvpewu9dyjk00wkadh75au3qs0gp8pv",
+      "type": "gamm",
+      "assets": [
+        {
+          "denom": "ibc/9712DBB13B9631EDFA9BF61B55F1B2D290B2ADB67E3A4EB3A875F3B6081B3B84",
+          "amount": "3202804",
+          "baseDenom": "udvpn"
+        },
+        {
+          "denom": "uion",
+          "amount": "5"
+        }
+      ],
+      "fees": {
+        "swap_fee": "0.003000000000000000",
+        "exit_fee": "0.000000000000000000"
+      }
+    },
+    {
+      "id": "19",
+      "address": "osmo1d0elgsavwgez5xf0fdan3krzfjm5jkdtcgxzlvunu4jndycs8u8qzs5h33",
+      "type": "gamm",
+      "assets": [
+        {
+          "denom": "ibc/1480B8FD20AD5FCAE81EA87584D269547DD4D436843C1D20F15E00EB64743EF4",
+          "amount": "22008",
+          "baseDenom": "uakt"
+        },
+        {
+          "denom": "uion",
+          "amount": "321"
+        }
+      ],
+      "fees": {
+        "swap_fee": "0.003000000000000000",
+        "exit_fee": "0.000000000000000000"
+      }
+    },
+    {
+      "id": "20",
+      "address": "osmo18ltnsk33a45827l42v89wws3u2evagpfua7v57nnhslnggxkqkgq4qjmcf",
+      "type": "gamm",
+      "assets": [
+        {
+          "denom": "ibc/1DCC8A6CB5689018431323953344A9F6CC4D0BFB261E88C9F7777372C10CD076",
+          "amount": "32",
+          "baseDenom": "uregen"
+        },
+        {
+          "denom": "ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2",
+          "amount": "2",
+          "baseDenom": "uatom"
+        }
+      ],
+      "fees": {
+        "swap_fee": "0.000300000000000000",
+        "exit_fee": "0.000000000000000000"
+      }
+    },
+    {
+      "id": "21",
+      "address": "osmo1fcl04ma3dhc080jscyzkgf65u2ctv9v67ec03an3cff0gnfqkllqqkufhx",
+      "type": "gamm",
+      "assets": [
+        {
+          "denom": "ibc/1DCC8A6CB5689018431323953344A9F6CC4D0BFB261E88C9F7777372C10CD076",
+          "amount": "1766",
+          "baseDenom": "uregen"
+        },
+        {
+          "denom": "ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2",
+          "amount": "88",
+          "baseDenom": "uatom"
+        }
+      ],
+      "fees": {
+        "swap_fee": "0.005000000000000000",
+        "exit_fee": "0.000000000000000000"
+      }
+    },
+    {
+      "id": "22",
+      "address": "osmo15e9w6y0g8z5as77g29azqwvp37dp96njn7h0vt5suz3un5vw95dsj4uurl",
+      "type": "gamm",
+      "assets": [
+        {
+          "denom": "ibc/1DCC8A6CB5689018431323953344A9F6CC4D0BFB261E88C9F7777372C10CD076",
+          "amount": "139231957259",
+          "baseDenom": "uregen"
+        },
+        {
+          "denom": "ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2",
+          "amount": "1175047359",
+          "baseDenom": "uatom"
+        }
+      ],
+      "fees": {
+        "swap_fee": "0.003000000000000000",
+        "exit_fee": "0.000000000000000000"
+      }
+    },
+    {
+      "id": "23",
+      "address": "osmo137n2magslhhhp77rt0qv2l4s4fksjncj2t8vd43sn9uwzeypqw9ql0enq2",
+      "type": "gamm",
+      "assets": [
+        {
+          "denom": "ibc/1DCC8A6CB5689018431323953344A9F6CC4D0BFB261E88C9F7777372C10CD076",
+          "amount": "1",
+          "baseDenom": "uregen"
+        },
+        {
+          "denom": "uosmo",
+          "amount": "1"
+        }
+      ],
+      "fees": {
+        "swap_fee": "0.000000000000000000",
+        "exit_fee": "0.000000000000000000"
+      }
+    },
+    {
+      "id": "24",
+      "address": "osmo1dt568undkrrlullpzz0c27548vjdrhnsxwhygxrdtacv2dns2ryqa28jhs",
+      "type": "gamm",
+      "assets": [
+        {
+          "denom": "ibc/1DCC8A6CB5689018431323953344A9F6CC4D0BFB261E88C9F7777372C10CD076",
+          "amount": "5280",
+          "baseDenom": "uregen"
+        },
+        {
+          "denom": "uosmo",
+          "amount": "552"
+        }
+      ],
+      "fees": {
+        "swap_fee": "0.002000000000000000",
+        "exit_fee": "0.000000000000000000"
+      }
+    },
+    {
+      "id": "25",
+      "address": "osmo1pm55q4srdfx8yen3ejl2jy5whc5xcfgu2ylq40yc4vk4zrzzsuxsz86tf5",
+      "type": "gamm",
+      "assets": [
+        {
+          "denom": "ibc/1DCC8A6CB5689018431323953344A9F6CC4D0BFB261E88C9F7777372C10CD076",
+          "amount": "537",
+          "baseDenom": "uregen"
+        },
+        {
+          "denom": "ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2",
+          "amount": "3",
+          "baseDenom": "uatom"
+        },
+        {
+          "denom": "uosmo",
+          "amount": "201"
+        }
+      ],
+      "fees": {
+        "swap_fee": "0.005000000000000000",
+        "exit_fee": "0.000000000000000000"
+      }
+    },
+    {
+      "id": "26",
+      "address": "osmo1a6rvlkd2jw32mjf2pt78fte7f2hqu7gvr0yqsqek2c7anftrunkqqq798z",
+      "type": "gamm",
+      "assets": [
+        {
+          "denom": "ibc/9712DBB13B9631EDFA9BF61B55F1B2D290B2ADB67E3A4EB3A875F3B6081B3B84",
+          "amount": "9218558",
+          "baseDenom": "udvpn"
+        },
+        {
+          "denom": "uion",
+          "amount": "134"
+        }
+      ],
+      "fees": {
+        "swap_fee": "0.003000000000000000",
+        "exit_fee": "0.000000000000000000"
+      }
+    },
+    {
+      "id": "27",
+      "address": "osmo1ap0j7jw0z9zf8hwc7yu3v0s7xasr7h235ggqdh6z0yzcvrvga88sgpg2d5",
+      "type": "gamm",
+      "assets": [
+        {
+          "denom": "ibc/1480B8FD20AD5FCAE81EA87584D269547DD4D436843C1D20F15E00EB64743EF4",
+          "amount": "2",
+          "baseDenom": "uakt"
+        },
+        {
+          "denom": "ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2",
+          "amount": "2",
+          "baseDenom": "uatom"
+        },
+        {
+          "denom": "uosmo",
+          "amount": "7"
+        }
+      ],
+      "fees": {
+        "swap_fee": "0.003000000000000000",
+        "exit_fee": "0.000000000000000000"
+      }
+    },
+    {
+      "id": "28",
+      "address": "osmo1hpfr8caa9swnqj2wapqwjfakqkfvdq70uvjv37pdst3xunsde2hqkz0na4",
+      "type": "gamm",
+      "assets": [
+        {
+          "denom": "ibc/A0CC0CF735BFB30E730C70019D4218A1244FF383503FF7579C9201AB93CA9293",
+          "amount": "1176",
+          "baseDenom": "uxprt"
+        },
+        {
+          "denom": "uion",
+          "amount": "1"
+        }
+      ],
+      "fees": {
+        "swap_fee": "0.020000000000000000",
+        "exit_fee": "0.000000000000000000"
+      }
+    },
+    {
+      "id": "29",
+      "address": "osmo18yxeq5kpup4k47vhjgu8j4y8d82sna7sdtjlz7hkuphnqtsmh8asc9vgca",
+      "type": "gamm",
+      "assets": [
+        {
+          "denom": "ibc/A0CC0CF735BFB30E730C70019D4218A1244FF383503FF7579C9201AB93CA9293",
+          "amount": "45",
+          "baseDenom": "uxprt"
+        },
+        {
+          "denom": "uion",
+          "amount": "2"
+        }
+      ],
+      "fees": {
+        "swap_fee": "0.001000000000000000",
+        "exit_fee": "0.000000000000000000"
+      }
+    },
+    {
+      "id": "30",
+      "address": "osmo1240p460sk6qsc8n2pqv0lcl826xdslxypfvgcqgy3g95z47jmqxqanasn0",
+      "type": "gamm",
+      "assets": [
+        {
+          "denom": "ibc/1DCC8A6CB5689018431323953344A9F6CC4D0BFB261E88C9F7777372C10CD076",
+          "amount": "1",
+          "baseDenom": "uregen"
+        },
+        {
+          "denom": "ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2",
+          "amount": "6",
+          "baseDenom": "uatom"
+        },
+        {
+          "denom": "uosmo",
+          "amount": "40"
+        }
+      ],
+      "fees": {
+        "swap_fee": "0.010000000000000000",
+        "exit_fee": "0.000000000000000000"
+      }
+    },
+    {
+      "id": "31",
+      "address": "osmo1jkxwvg4dua49hsfymvfl9s2wenmguqrq3dl0ttms047w6zv2n5sqh4svnn",
+      "type": "gamm",
+      "assets": [
+        {
+          "denom": "ibc/1DCC8A6CB5689018431323953344A9F6CC4D0BFB261E88C9F7777372C10CD076",
+          "amount": "13692",
+          "baseDenom": "uregen"
+        },
+        {
+          "denom": "ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2",
+          "amount": "180",
+          "baseDenom": "uatom"
+        },
+        {
+          "denom": "ibc/A0CC0CF735BFB30E730C70019D4218A1244FF383503FF7579C9201AB93CA9293",
+          "amount": "2657",
+          "baseDenom": "uxprt"
+        },
+        {
+          "denom": "uosmo",
+          "amount": "1609"
+        }
+      ],
+      "fees": {
+        "swap_fee": "0.030000000000000000",
+        "exit_fee": "0.000000000000000000"
+      }
+    },
+    {
+      "id": "32",
+      "address": "osmo1maw9j25fppqf3c2l4ufxxhn7leu58ke2c5lm9r8ehm60fnzgpzfsu8jzhk",
+      "type": "gamm",
+      "assets": [
+        {
+          "denom": "ibc/1480B8FD20AD5FCAE81EA87584D269547DD4D436843C1D20F15E00EB64743EF4",
+          "amount": "3",
+          "baseDenom": "uakt"
+        },
+        {
+          "denom": "uosmo",
+          "amount": "5"
+        }
+      ],
+      "fees": {
+        "swap_fee": "0.000000000000000000",
+        "exit_fee": "0.000000000000000000"
+      }
+    },
+    {
+      "id": "33",
+      "address": "osmo1pppq6lxkyrhh74npg87t2hgzqvamdck0u2qkycptdlczpx95h9tqn4c8d3",
+      "type": "gamm",
+      "assets": [
+        {
+          "denom": "ibc/A0CC0CF735BFB30E730C70019D4218A1244FF383503FF7579C9201AB93CA9293",
+          "amount": "321041",
+          "baseDenom": "uxprt"
+        },
+        {
+          "denom": "uion",
+          "amount": "850"
+        },
+        {
+          "denom": "uosmo",
+          "amount": "92244"
+        }
+      ],
+      "fees": {
+        "swap_fee": "0.005000000000000000",
+        "exit_fee": "0.000000000000000000"
+      }
+    },
+    {
+      "id": "34",
+      "address": "osmo13mczv44wvyqn6fys7f9mcv57d9fmg6e7yfkypaykp99amqfw7chq9wa5q9",
+      "type": "gamm",
+      "assets": [
+        {
+          "denom": "ibc/1DCC8A6CB5689018431323953344A9F6CC4D0BFB261E88C9F7777372C10CD076",
+          "amount": "96216",
+          "baseDenom": "uregen"
+        },
+        {
+          "denom": "uosmo",
+          "amount": "5193"
+        }
+      ],
+      "fees": {
+        "swap_fee": "0.050000000000000000",
+        "exit_fee": "0.000000000000000000"
+      }
+    },
+    {
+      "id": "35",
+      "address": "osmo1p9pa7umdvry4u4338hgu4x5pkepnk9pcqddpg65zdj0k3a3ucjts85hj73",
+      "type": "gamm",
+      "assets": [
+        {
+          "denom": "uion",
+          "amount": "303"
+        },
+        {
+          "denom": "uosmo",
+          "amount": "7723"
+        }
+      ],
+      "fees": {
+        "swap_fee": "0.005000000000000000",
+        "exit_fee": "0.000000000000000000"
+      }
+    },
+    {
+      "id": "36",
+      "address": "osmo1sknzx8cw662aspm7f5xygfhuh9hkf76qqgqwshaqhmp9m920ahlqanwq25",
+      "type": "gamm",
+      "assets": [
+        {
+          "denom": "ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2",
+          "amount": "10798",
+          "baseDenom": "uatom"
+        },
+        {
+          "denom": "uosmo",
+          "amount": "39492"
+        }
+      ],
+      "fees": {
+        "swap_fee": "0.000000000000000000",
+        "exit_fee": "0.000000000000000000"
+      }
+    },
+    {
+      "id": "37",
+      "address": "osmo1avm2f4fegrla4wcxft7ct3rksnuxvjl3mhv9gljg2e0c2swvlmqsaxy3xv",
+      "type": "gamm",
+      "assets": [
+        {
+          "denom": "ibc/1480B8FD20AD5FCAE81EA87584D269547DD4D436843C1D20F15E00EB64743EF4",
+          "amount": "3568",
+          "baseDenom": "uakt"
+        },
+        {
+          "denom": "ibc/9712DBB13B9631EDFA9BF61B55F1B2D290B2ADB67E3A4EB3A875F3B6081B3B84",
+          "amount": "8768099",
+          "baseDenom": "udvpn"
+        }
+      ],
+      "fees": {
+        "swap_fee": "0.030000000000000000",
+        "exit_fee": "0.000000000000000000"
+      }
+    },
+    {
+      "id": "38",
+      "address": "osmo18ahq029ylafhmmf25wqu6lvpz6nz4nf533sv6hlqht6d49p23ehszdp5gh",
+      "type": "gamm",
+      "assets": [
+        {
+          "denom": "ibc/7C4D60AA95E5A7558B0A364860979CA34B7FF8AAF255B87AF9E879374470CEC0",
+          "amount": "1767",
+          "baseDenom": "uiris"
+        },
+        {
+          "denom": "ibc/9712DBB13B9631EDFA9BF61B55F1B2D290B2ADB67E3A4EB3A875F3B6081B3B84",
+          "amount": "14362",
+          "baseDenom": "udvpn"
+        }
+      ],
+      "fees": {
+        "swap_fee": "0.003000000000000000",
+        "exit_fee": "0.000000000000000000"
+      }
+    },
+    {
+      "id": "39",
+      "address": "osmo1gfzdnqyy95cgvjl3vkr7vs3ra9f06xu7mu0w4ldxj6rqszkhvnts0vs24p",
+      "type": "gamm",
+      "assets": [
+        {
+          "denom": "ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2",
+          "amount": "834681",
+          "baseDenom": "uatom"
+        },
+        {
+          "denom": "uosmo",
+          "amount": "141920558"
+        }
+      ],
+      "fees": {
+        "swap_fee": "0.010000000000000000",
+        "exit_fee": "0.000000000000000000"
+      }
+    },
+    {
+      "id": "40",
+      "address": "osmo10vxhvl8cju4fn4kfjeay7qczl9xsffy08lpkw88netd5qcuqaunssganxl",
+      "type": "gamm",
+      "assets": [
+        {
+          "denom": "ibc/1DCC8A6CB5689018431323953344A9F6CC4D0BFB261E88C9F7777372C10CD076",
+          "amount": "33117",
+          "baseDenom": "uregen"
+        },
+        {
+          "denom": "ibc/A0CC0CF735BFB30E730C70019D4218A1244FF383503FF7579C9201AB93CA9293",
+          "amount": "10301",
+          "baseDenom": "uxprt"
+        },
+        {
+          "denom": "uosmo",
+          "amount": "8544"
+        }
+      ],
+      "fees": {
+        "swap_fee": "0.002000000000000000",
+        "exit_fee": "0.000000000000000000"
+      }
+    },
+    {
+      "id": "41",
+      "address": "osmo1vm909at9gj8whxxgqt4enq3uls2lpjkyuac52ppsa69sp4zttfqq0qpw9v",
+      "type": "gamm",
+      "assets": [
+        {
+          "denom": "ibc/1480B8FD20AD5FCAE81EA87584D269547DD4D436843C1D20F15E00EB64743EF4",
+          "amount": "32",
+          "baseDenom": "uakt"
+        },
+        {
+          "denom": "ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2",
+          "amount": "1",
+          "baseDenom": "uatom"
+        },
+        {
+          "denom": "uosmo",
+          "amount": "51"
+        }
+      ],
+      "fees": {
+        "swap_fee": "0.005000000000000000",
+        "exit_fee": "0.000000000000000000"
+      }
+    },
+    {
+      "id": "42",
+      "address": "osmo1txawpctjs6phpqsnkx2r5qud7yvekw93394anhuzz4dquy5jggssgqtn0l",
+      "type": "gamm",
+      "assets": [
+        {
+          "denom": "ibc/1DCC8A6CB5689018431323953344A9F6CC4D0BFB261E88C9F7777372C10CD076",
+          "amount": "715698890145",
+          "baseDenom": "uregen"
+        },
+        {
+          "denom": "uosmo",
+          "amount": "54049543244"
+        }
+      ],
+      "fees": {
+        "swap_fee": "0.002000000000000000",
+        "exit_fee": "0.000000000000000000"
+      }
+    },
+    {
+      "id": "43",
+      "address": "osmo1zmxelh7k08hy085shm5y08mqeaqmahee7u77lpnf2h4eufnsyn6qucvfjy",
+      "type": "gamm",
+      "assets": [
+        {
+          "denom": "ibc/1480B8FD20AD5FCAE81EA87584D269547DD4D436843C1D20F15E00EB64743EF4",
+          "amount": "1907575",
+          "baseDenom": "uakt"
+        },
+        {
+          "denom": "uosmo",
+          "amount": "9493700"
+        }
+      ],
+      "fees": {
+        "swap_fee": "0.000000000000000000",
+        "exit_fee": "0.000000000000000000"
+      }
+    },
+    {
+      "id": "44",
+      "address": "osmo1j6dyr2udygnkc94gvdfgx7tt6ct348mm20gfcudj44eardh9u8qsqyjtjs",
+      "type": "gamm",
+      "assets": [
+        {
+          "denom": "ibc/1480B8FD20AD5FCAE81EA87584D269547DD4D436843C1D20F15E00EB64743EF4",
+          "amount": "15",
+          "baseDenom": "uakt"
+        },
+        {
+          "denom": "ibc/9712DBB13B9631EDFA9BF61B55F1B2D290B2ADB67E3A4EB3A875F3B6081B3B84",
+          "amount": "556",
+          "baseDenom": "udvpn"
+        },
+        {
+          "denom": "uosmo",
+          "amount": "1"
+        }
+      ],
+      "fees": {
+        "swap_fee": "0.003000000000000000",
+        "exit_fee": "0.000000000000000000"
+      }
+    },
+    {
+      "id": "45",
+      "address": "osmo1plswdqqd9nn7jy3s62vnjjmshwkk0us07shttqsmdph2gkgt6ejqmqef5c",
+      "type": "gamm",
+      "assets": [
+        {
+          "denom": "ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2",
+          "amount": "11",
+          "baseDenom": "uatom"
+        },
+        {
+          "denom": "uosmo",
+          "amount": "58"
+        }
+      ],
+      "fees": {
+        "swap_fee": "0.002000000000000000",
+        "exit_fee": "0.000000000000000000"
+      }
+    },
+    {
+      "id": "46",
+      "address": "osmo1uc9j2thyq26jvktz4dsnya508dzr6ksjgl2w0lspsf2rdt64qu2qvgdz52",
+      "type": "gamm",
+      "assets": [
+        {
+          "denom": "ibc/1480B8FD20AD5FCAE81EA87584D269547DD4D436843C1D20F15E00EB64743EF4",
+          "amount": "5128",
+          "baseDenom": "uakt"
+        },
+        {
+          "denom": "ibc/E6931F78057F7CC5DA0FD6CEF82FF39373A6E0452BF1FD76910B93292CF356C1",
+          "amount": "13745255",
+          "baseDenom": "basecro"
+        }
+      ],
+      "fees": {
+        "swap_fee": "0.000000000000000000",
+        "exit_fee": "0.000000000000000000"
+      }
+    },
+    {
+      "id": "47",
+      "address": "osmo1s4vmxgjtt7g95znpu6ymwh65t6guqhzss2eaac0l2hn25vzuq3pq03eyte",
+      "type": "gamm",
+      "assets": [
+        {
+          "denom": "ibc/1480B8FD20AD5FCAE81EA87584D269547DD4D436843C1D20F15E00EB64743EF4",
+          "amount": "23903",
+          "baseDenom": "uakt"
+        },
+        {
+          "denom": "ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2",
+          "amount": "14401",
+          "baseDenom": "uatom"
+        },
+        {
+          "denom": "ibc/9712DBB13B9631EDFA9BF61B55F1B2D290B2ADB67E3A4EB3A875F3B6081B3B84",
+          "amount": "83660868",
+          "baseDenom": "udvpn"
+        },
+        {
+          "denom": "uosmo",
+          "amount": "122557"
+        }
+      ],
+      "fees": {
+        "swap_fee": "0.002000000000000000",
+        "exit_fee": "0.000000000000000000"
+      }
+    },
+    {
+      "id": "48",
+      "address": "osmo1r57khl30h7ewsqe0lkr4kk7m58nlsg2qjzgxzsjal2jec9q3xcnqshf4sn",
+      "type": "gamm",
+      "assets": [
+        {
+          "denom": "ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2",
+          "amount": "671992",
+          "baseDenom": "uatom"
+        },
+        {
+          "denom": "uion",
+          "amount": "219"
+        },
+        {
+          "denom": "uosmo",
+          "amount": "1905801"
+        }
+      ],
+      "fees": {
+        "swap_fee": "0.010000000000000000",
+        "exit_fee": "0.000000000000000000"
+      }
+    },
+    {
+      "id": "49",
+      "address": "osmo1pu8jjw9vqpte2aqxd6y4fxjfrgp6ra79cvh3a3tefcwpheywpw7qqkqegf",
+      "type": "gamm",
+      "assets": [
+        {
+          "denom": "ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2",
+          "amount": "1",
+          "baseDenom": "uatom"
+        },
+        {
+          "denom": "ibc/9712DBB13B9631EDFA9BF61B55F1B2D290B2ADB67E3A4EB3A875F3B6081B3B84",
+          "amount": "299",
+          "baseDenom": "udvpn"
+        },
+        {
+          "denom": "uosmo",
+          "amount": "1"
+        }
+      ],
+      "fees": {
+        "swap_fee": "0.003000000000000000",
+        "exit_fee": "0.000000000000000000"
+      }
+    },
+    {
+      "id": "50",
+      "address": "osmo1l5ehe7cqgf5fplxegqaukwygaz8g2h62yhdt06te6uem30l2j9mswf6qct",
+      "type": "gamm",
+      "assets": [
+        {
+          "denom": "uion",
+          "amount": "1"
+        },
+        {
+          "denom": "uosmo",
+          "amount": "2074"
+        }
+      ],
+      "fees": {
+        "swap_fee": "0.010000000000000000",
+        "exit_fee": "0.000000000000000000"
+      }
+    },
+    {
+      "id": "51",
+      "address": "osmo106vz3g36x84avkrrt2v602khu0t9lppptdd2gp0mr0l35pmqv5fqe2wmhj",
+      "type": "gamm",
+      "assets": [
+        {
+          "denom": "gamm/pool/50",
+          "amount": "91589561558938"
+        },
+        {
+          "denom": "uion",
+          "amount": "1"
+        },
+        {
+          "denom": "uosmo",
+          "amount": "902"
+        }
+      ],
+      "fees": {
+        "swap_fee": "0.010000000000000000",
+        "exit_fee": "0.000000000000000000"
+      }
+    },
+    {
+      "id": "52",
+      "address": "osmo17sx52jq5kedxjaha8ylsh9gauclxd98fmktshvnjqu5d3jga3c4sj2rey9",
+      "type": "gamm",
+      "assets": [
+        {
+          "denom": "ibc/1480B8FD20AD5FCAE81EA87584D269547DD4D436843C1D20F15E00EB64743EF4",
+          "amount": "1167",
+          "baseDenom": "uakt"
+        },
+        {
+          "denom": "ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2",
+          "amount": "760",
+          "baseDenom": "uatom"
+        },
+        {
+          "denom": "uosmo",
+          "amount": "661"
+        }
+      ],
+      "fees": {
+        "swap_fee": "0.000000000000000000",
+        "exit_fee": "0.000000000000000000"
+      }
+    },
+    {
+      "id": "53",
+      "address": "osmo1240gapkk48w3guv7exqmc630clkxhzw4reqyadezmssrhd263rwsp5rg6w",
+      "type": "gamm",
+      "assets": [
+        {
+          "denom": "ibc/1480B8FD20AD5FCAE81EA87584D269547DD4D436843C1D20F15E00EB64743EF4",
+          "amount": "6819",
+          "baseDenom": "uakt"
+        },
+        {
+          "denom": "ibc/A0CC0CF735BFB30E730C70019D4218A1244FF383503FF7579C9201AB93CA9293",
+          "amount": "55401",
+          "baseDenom": "uxprt"
+        },
+        {
+          "denom": "uosmo",
+          "amount": "16388"
+        }
+      ],
+      "fees": {
+        "swap_fee": "0.020000000000000000",
+        "exit_fee": "0.000000000000000000"
+      }
+    },
+    {
+      "id": "54",
+      "address": "osmo1xjd0l22txgpce4fh2kgjy7gmvhszzl05nzw7e7lc76qddxrywqpscj5pl8",
+      "type": "gamm",
+      "assets": [
+        {
+          "denom": "ibc/1480B8FD20AD5FCAE81EA87584D269547DD4D436843C1D20F15E00EB64743EF4",
+          "amount": "20709",
+          "baseDenom": "uakt"
+        },
+        {
+          "denom": "uosmo",
+          "amount": "87404"
+        }
+      ],
+      "fees": {
+        "swap_fee": "0.002000000000000000",
+        "exit_fee": "0.000000000000000000"
+      }
+    },
+    {
+      "id": "55",
+      "address": "osmo14rjjpwlhg3vdqtuvjx7jkfnvas3uhhyak4r6pnewup00qm0thjmsstmrv2",
+      "type": "gamm",
+      "assets": [
+        {
+          "denom": "gamm/pool/1",
+          "amount": "94647820828117639"
+        },
+        {
+          "denom": "gamm/pool/2",
+          "amount": "29184405599579"
+        },
+        {
+          "denom": "uion",
+          "amount": "10"
+        }
+      ],
+      "fees": {
+        "swap_fee": "0.005000000000000000",
+        "exit_fee": "0.000000000000000000"
+      }
+    },
+    {
+      "id": "56",
+      "address": "osmo1r32kkdc46p78k6lsaqld3dl7dvdquunue3w60amuylg8q945mqzqehqgcs",
+      "type": "gamm",
+      "assets": [
+        {
+          "denom": "ibc/A0CC0CF735BFB30E730C70019D4218A1244FF383503FF7579C9201AB93CA9293",
+          "amount": "49",
+          "baseDenom": "uxprt"
+        },
+        {
+          "denom": "uion",
+          "amount": "1"
+        },
+        {
+          "denom": "uosmo",
+          "amount": "117"
+        }
+      ],
+      "fees": {
+        "swap_fee": "0.003300000000000000",
+        "exit_fee": "0.000000000000000000"
+      }
+    },
+    {
+      "id": "57",
+      "address": "osmo19cjafdcm2ek3su5gq4s3kncvzcrvjqhrk90ywt5ea4dhx8hvd8pq9emldh",
+      "type": "gamm",
+      "assets": [
+        {
+          "denom": "ibc/1DCC8A6CB5689018431323953344A9F6CC4D0BFB261E88C9F7777372C10CD076",
+          "amount": "40",
+          "baseDenom": "uregen"
+        },
+        {
+          "denom": "ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2",
+          "amount": "4",
+          "baseDenom": "uatom"
+        },
+        {
+          "denom": "uosmo",
+          "amount": "23"
+        }
+      ],
+      "fees": {
+        "swap_fee": "0.003000000000000000",
+        "exit_fee": "0.000000000000000000"
+      }
+    },
+    {
+      "id": "58",
+      "address": "osmo1hg2963kvsu2arwx69hcqmsl2ms4x5pjw9x7w43lvspn5tgz4aqksk0sk5c",
+      "type": "gamm",
+      "assets": [
+        {
+          "denom": "ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2",
+          "amount": "229",
+          "baseDenom": "uatom"
+        },
+        {
+          "denom": "uosmo",
+          "amount": "3331"
+        }
+      ],
+      "fees": {
+        "swap_fee": "0.000000000000000000",
+        "exit_fee": "0.000000000000000000"
+      }
+    },
+    {
+      "id": "59",
+      "address": "osmo1edal9l38mgcm2hj27hgz0mcqapkp9yla3pgtusxap824hwqvfttq00m4wy",
+      "type": "gamm",
+      "assets": [
+        {
+          "denom": "ibc/1480B8FD20AD5FCAE81EA87584D269547DD4D436843C1D20F15E00EB64743EF4",
+          "amount": "4966",
+          "baseDenom": "uakt"
+        },
+        {
+          "denom": "ibc/1DCC8A6CB5689018431323953344A9F6CC4D0BFB261E88C9F7777372C10CD076",
+          "amount": "133478",
+          "baseDenom": "uregen"
+        }
+      ],
+      "fees": {
+        "swap_fee": "0.015000000000000000",
+        "exit_fee": "0.000000000000000000"
+      }
+    }
+  ]
+}

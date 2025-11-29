@@ -1,5 +1,6 @@
 import { join } from 'path';
 import { decodeIbcDenom, formatDenom } from './denom.js';
+import { calcUsdValue, formatUsd, getGeckoIdsForDenoms, fetchPrices } from './price.js';
 
 const poolsPath = join(import.meta.dir, 'data', 'pools.json');
 
@@ -87,7 +88,7 @@ function formatAmount(amount, denom) {
 	return whole.toString();
 }
 
-// Format pool for display
+// Format pool for display (sync version without USD)
 export function formatPool(pool, decoded = false) {
 	const lines = [
 		`Pool #${pool.id} (${pool.type})`,
@@ -115,6 +116,77 @@ export function formatPool(pool, decoded = false) {
 	}
 
 	return lines.join('\n');
+}
+
+// Format pool with USD values (async)
+export async function formatPoolWithUsd(pool, decoded = false) {
+	// Prefetch prices for all assets in pool
+	const denoms = Object.values(pool.liquidity || {}).map(l => l.denom).filter(Boolean);
+	const geckoIds = await getGeckoIdsForDenoms(denoms);
+	if (geckoIds.length > 0) await fetchPrices(geckoIds);
+
+	const lines = [
+		`Pool #${pool.id} (${pool.type})`,
+		`  Address: ${pool.address}`,
+		`  Assets:`,
+	];
+
+	let totalUsd = 0;
+
+	if (decoded && pool.decodedAssets) {
+		for (const [key, asset] of Object.entries(pool.decodedAssets)) {
+			const liq = pool.liquidity?.[key];
+			let liqStr = '';
+			let usdStr = '';
+			if (liq) {
+				liqStr = ` [${formatAmount(liq.amount, liq.denom)}]`;
+				const usdVal = await calcUsdValue(liq.denom, liq.amount);
+				if (usdVal !== null) {
+					totalUsd += usdVal;
+					usdStr = ` (${formatUsd(usdVal)})`;
+				}
+			}
+			lines.push(`    ${key}: ${asset.display}${liqStr}${usdStr}`);
+		}
+	} else {
+		for (const [key, denom] of Object.entries(pool.assets)) {
+			const liq = pool.liquidity?.[key];
+			let liqStr = '';
+			let usdStr = '';
+			if (liq) {
+				liqStr = ` [${formatAmount(liq.amount, liq.denom)}]`;
+				const usdVal = await calcUsdValue(liq.denom, liq.amount);
+				if (usdVal !== null) {
+					totalUsd += usdVal;
+					usdStr = ` (${formatUsd(usdVal)})`;
+				}
+			}
+			lines.push(`    ${key}: ${denom}${liqStr}${usdStr}`);
+		}
+	}
+
+	if (totalUsd > 0) {
+		lines.push(`  Total TVL: ${formatUsd(totalUsd)}`);
+	}
+
+	if (pool.fees?.swapFee) {
+		const fee = parseFloat(pool.fees.swapFee) * 100;
+		lines.push(`  Swap Fee: ${fee.toFixed(2)}%`);
+	}
+
+	return lines.join('\n');
+}
+
+// Get pool TVL in USD
+export async function getPoolTvl(pool) {
+	let totalUsd = 0;
+	for (const [key, liq] of Object.entries(pool.liquidity || {})) {
+		if (liq?.denom && liq?.amount) {
+			const usdVal = await calcUsdValue(liq.denom, liq.amount);
+			if (usdVal !== null) totalUsd += usdVal;
+		}
+	}
+	return totalUsd;
 }
 
 // Search with decoded denom matching

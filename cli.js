@@ -6,8 +6,11 @@ import {
 	getPool,
 	decodePoolAssets,
 	formatPool,
+	formatPoolWithUsd,
+	getPoolTvl,
 	searchByBaseDenom,
 } from './query.js';
+import { formatUsd } from './price.js';
 import { decodeIbcDenom, formatDenom } from './denom.js';
 
 const args = process.argv.slice(2);
@@ -128,7 +131,7 @@ async function run() {
 			console.log(`Found ${pools.length} pools:\n`);
 			for (const pool of pools.slice(0, 10)) {
 				const decoded = await decodePoolAssets(pool);
-				console.log(formatPool(decoded, true));
+				console.log(await formatPoolWithUsd(decoded, true));
 				console.log();
 			}
 			if (pools.length > 10) {
@@ -149,7 +152,7 @@ async function run() {
 				return;
 			}
 			const decoded = await decodePoolAssets(pool);
-			console.log(formatPool(decoded, true));
+			console.log(await formatPoolWithUsd(decoded, true));
 			break;
 		}
 

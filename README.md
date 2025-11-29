@@ -1,54 +1,150 @@
-# Lazy Osmosis Pools List Generator
+# Osmosis Pool Collector
 
-### Application Overview
+A Bun-native tool for collecting, querying, and analyzing Osmosis DEX liquidity pools with real-time USD pricing.
 
-This application is designed to fetch and process pool data from the Osmosis blockchain, specifically targeting liquidity pools. It handles the retrieval, formatting, and storage of data, cycling through multiple REST API endpoints to ensure robustness against failures.
+## Features
 
-### Setup Process
+- Collects all pool types: GAMM, Concentrated Liquidity, StableSwap, CosmWasm
+- IBC denom decoding with caching
+- Real-time USD pricing via CoinGecko (using Cosmos Chain Registry for token mapping)
+- Multi-endpoint rotation for reliability
+- Incremental collection with resume support
 
-1. **Installation**: 
-   - Clone the repository containing this code.
-   - Ensure Node.js is installed on your system.
-   - Install the necessary dependencies by running `npm install` in the project directory. The main dependency is `node-fetch` for handling HTTP requests.
+## Requirements
 
-2. **Configuration**: 
-   - The configuration of REST API endpoints is managed in the `config.js` file. Update the `restAddresses` array with the appropriate REST endpoints for fetching Osmosis pool data.
+- [Bun](https://bun.sh) >= 1.0.0
 
-3. **Data Directory Setup**: 
-   - The application ensures that a `data` directory exists in the project root. This directory will contain a `pools.json` file where the fetched pool data will be stored.
+## Installation
 
-### How It Works
+```bash
+git clone https://github.com/Cordtus/bmntpoolslist.git
+cd bmntpoolslist
+```
 
-1. **Initial Setup**:
-   - The application starts by checking for an existing `pools.json` file. If it exists, it reads the last processed pool ID to resume fetching from where it left off. If the file doesn't exist, it creates a new one and starts from pool ID 1.
+No dependencies to install - uses Bun native APIs.
 
-2. **Data Fetching and Processing**:
-   - The main function `fetchAndProcessPoolData` is responsible for fetching data for each pool starting from the specified pool ID. 
-   - It cycles through the provided REST endpoints (`restAddresses`) to fetch data, ensuring redundancy in case an endpoint fails.
-   - For each pool, it formats the data based on the pool type (either concentrated liquidity or GAMM) and appends it to the `pools.json` file.
+## Usage
 
-3. **Error Handling**:
-   - The application includes robust error handling with retry logic. If a fetch operation fails, it retries up to 5 times before moving to the next pool ID or switching to the next REST endpoint.
-   - After a certain number of consecutive failures, the application introduces delays (5 minutes or 6 hours) to avoid overwhelming the endpoints and to allow any temporary issues to resolve.
+### Collect Pool Data
 
-4. **Output**:
-   - The processed data for each pool is stored in the `pools.json` file within the `data` directory. This JSON file contains an array of pool objects, each formatted with relevant details like pool type, assets, fees, and address.
+```bash
+bun run start
+# or
+bun run app.js
+```
 
-### Key Functions
+This fetches all Osmosis pools and saves them to `data/pools.json`. Collection resumes from the last saved pool ID if interrupted.
 
-- **`readPoolsFile()`**: Reads the existing `pools.json` file or initializes a new one if it doesn't exist.
-- **`writePoolsFile()`**: Writes the fetched and formatted pool data back to the `pools.json` file.
-- **`fetchPoolData()`**: Fetches pool data from the specified REST API endpoint.
-- **`formatData()`**: Formats the raw data received from the API into a structured JSON object.
-- **`handleFailuresAndDelays()`**: Manages delays and retries based on consecutive failures.
+### Query Pools
 
-### Data Output
+```bash
+# Search by base denom (decodes IBC denoms, shows USD values)
+bun run cli.js search atom
+bun run cli.js search rowan
 
-The output of this application is a `pools.json` file containing a collection of pool data objects. Each object includes:
-- Pool type (`concentratedliquidity` or `gamm`)
-- Pool ID
-- Associated assets (e.g., token1, token2)
-- Fees (swap fee, exit fee)
-- Pool address
+# Find pools containing an asset (partial match)
+bun run cli.js find uosmo
 
-This data can be used for analysis, reporting, or further processing as needed.
+# Find pools with exact asset match
+bun run cli.js find-exact uosmo
+
+# Find pools containing ALL specified assets
+bun run cli.js find-all uosmo uatom
+
+# Find pools containing ANY of the specified assets
+bun run cli.js find-any uosmo uatom ujuno
+
+# Get specific pool by ID (with USD values)
+bun run cli.js pool 1
+
+# Decode an IBC denom
+bun run cli.js decode ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2
+```
+
+### Example Output
+
+```
+Pool #1 (gamm)
+  Address: osmo1mw0ac6rwlp5r8wapwk3zs6g29h8fcscxqakdzw9emkne6c8wjp9q0t3v8t
+  Assets:
+    token1: uatom (channel-0) [279.41K] ($681.76K)
+    token2: uosmo [8.72M] ($681.97K)
+  Total TVL: $1.36M
+  Swap Fee: 0.20%
+```
+
+## Project Structure
+
+```
+.
+├── app.js          # Main collector - fetches pools from REST APIs
+├── cli.js          # Command-line interface for querying
+├── config.js       # REST endpoints and configuration
+├── denom.js        # IBC denom decoding with cache
+├── price.js        # USD pricing via CoinGecko + Chain Registry
+├── query.js        # Pool search and formatting functions
+├── utils.js        # File I/O and fetch utilities
+└── data/
+    ├── pools.json      # Collected pool data
+    ├── denom_cache.json # IBC denom decode cache
+    ├── assetlist.json   # Chain registry asset cache
+    └── prices.json      # Price cache
+```
+
+## Configuration
+
+Edit `config.js` to customize:
+
+- `restEndpoints` - REST API endpoints (rotates on failure)
+- `config.maxRetries` - Retry attempts per pool
+- `config.requestDelayMs` - Delay between requests
+
+Default endpoints:
+- lcd.osmosis.zone
+- rest.lavenderfive.com/osmosis
+- rest-osmosis.ecostake.com
+- osmosis-api.polkachu.com
+- rest.osmosis.goldenratiostaking.net
+
+## Pool Types
+
+| Type | Description |
+|------|-------------|
+| `gamm` | Classic XYK AMM pools |
+| `stableswap` | Curve-style stable pools |
+| `concentratedliquidity` | Uniswap v3 style CL pools |
+| `cosmwasmpool` | CosmWasm-based pools (Transmuter, etc.) |
+
+## Data Format
+
+Each pool in `pools.json`:
+
+```json
+{
+  "type": "gamm",
+  "id": "1",
+  "address": "osmo1...",
+  "assets": {
+    "token1": "ibc/27394...",
+    "token2": "uosmo"
+  },
+  "liquidity": {
+    "token1": { "denom": "ibc/27394...", "amount": "279410000000" },
+    "token2": { "denom": "uosmo", "amount": "8720000000000" }
+  },
+  "fees": {
+    "swapFee": "0.002",
+    "exitFee": "0"
+  }
+}
+```
+
+## Caching
+
+- **IBC denoms**: Cached indefinitely in `data/denom_cache.json`
+- **Asset list**: Cached 24 hours in `data/assetlist.json`
+- **Prices**: Cached 5 minutes in `data/prices.json`
+
+## License
+
+MIT

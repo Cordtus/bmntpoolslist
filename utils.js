@@ -1,62 +1,66 @@
-const fs = require('fs');
-const path = require('path');
+import { join } from 'path';
+import { restEndpoints, poolApiPath, config } from './config.js';
 
-const dataPath = path.join(__dirname, 'data', 'pools.json');
+const dataDir = join(import.meta.dir, 'data');
+const poolsPath = join(dataDir, 'pools.json');
 
-// Ensure the 'data' directory exists
-function ensureDataDirectory() {
-    const dir = path.dirname(dataPath);
-    if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, { recursive: true });
-        console.log(`Created directory at ${dir}`);
-    }
+// Ensure data directory exists using Bun native fs
+export async function ensureDataDir() {
+	const dir = Bun.file(dataDir);
+	if (!await dir.exists()) {
+		await Bun.write(join(dataDir, '.keep'), '');
+		console.log(`Created data directory`);
+	}
 }
 
-// Check and read pools file, create if not exists
-function readPoolsFile() {
-    ensureDataDirectory(); // Ensure the data directory exists
-    if (fs.existsSync(dataPath)) {
-        const data = fs.readFileSync(dataPath);
-        try {
-            return JSON.parse(data.toString());
-        } catch (error) {
-            console.error("Error parsing JSON from file:", error);
-            // Initialize with an empty structure if parsing fails
-            return { pools: [] };
-        }
-    } else {
-        // Initialize the file with an empty structure if it doesn't exist
-        console.log('pools.json not found, creating a new file.');
-        const initData = { pools: [] };
-        writePoolsFile(initData); // Reuse the write function to ensure consistency
-        return initData;
-    }
+// Read pools file using Bun native APIs
+export async function readPools() {
+	await ensureDataDir();
+	const file = Bun.file(poolsPath);
+	if (await file.exists()) {
+		try {
+			return await file.json();
+		} catch (err) {
+			console.error('Failed to parse pools.json:', err.message);
+			return { pools: [] };
+		}
+	}
+	const init = { pools: [] };
+	await writePools(init);
+	return init;
 }
 
-// Write new pool data, with logging
-function writePoolsFile(data) {
-    try {
-        fs.writeFileSync(dataPath, JSON.stringify(data, null, 2));
-        console.log('Data successfully written to pools.json');
-    } catch (error) {
-        console.error("Error writing to file:", error);
-    }
+// Write pools file using Bun native APIs
+export async function writePools(data) {
+	await Bun.write(poolsPath, JSON.stringify(data, null, 2));
 }
 
-// Run HTTP request
-async function fetchPoolData(restAddress, poolId) {
-    const fetch = (await import('node-fetch')).default;
+// Fetch pool data with endpoint rotation
+export async function fetchPool(poolId, endpointIdx = 0) {
+	const endpoint = restEndpoints[endpointIdx];
+	const url = `${endpoint}${poolApiPath(poolId)}`;
 
-    const url = `${restAddress}/osmosis/poolmanager/v1beta1/pools/${poolId}`;
-    try {
-        const response = await fetch(url);
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        const data = await response.json();
-        return data;
-    } catch (error) {
-        console.error("Fetch error:", error);
-        throw error;
-    }
+	const res = await fetch(url);
+	if (!res.ok) {
+		throw new Error(`HTTP ${res.status} from ${endpoint}`);
+	}
+	return res.json();
 }
 
-module.exports = { readPoolsFile, writePoolsFile, fetchPoolData };
+// Fetch with automatic endpoint rotation and retries
+export async function fetchWithRetry(poolId) {
+	let lastErr;
+	for (let attempt = 0; attempt < config.maxRetries; attempt++) {
+		const endpointIdx = attempt % restEndpoints.length;
+		try {
+			return await fetchPool(poolId, endpointIdx);
+		} catch (err) {
+			lastErr = err;
+			console.error(`Attempt ${attempt + 1} failed for pool ${poolId}: ${err.message}`);
+		}
+	}
+	throw lastErr;
+}
+
+// Delay helper using Bun.sleep
+export const delay = (ms) => Bun.sleep(ms);

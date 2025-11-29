@@ -4,9 +4,13 @@
   "description": "Collects and normalizes Osmosis liquidity pool data",
   "type": "module",
   "main": "app.js",
+  "bin": {
+    "pools": "./cli.js"
+  },
   "scripts": {
     "start": "bun run app.js",
-    "dev": "bun --watch app.js"
+    "dev": "bun --watch app.js",
+    "query": "bun run cli.js"
   },
   "engines": {
     "bun": ">=1.0.0"

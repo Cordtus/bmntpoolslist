@@ -1,5 +1,5 @@
 import { join } from 'path';
-import { restEndpoints, poolApiPath, config } from './config.js';
+import { restEndpoints, poolApiPath, liquidityApiPath, config } from './config.js';
 
 const dataDir = join(import.meta.dir, 'data');
 const poolsPath = join(dataDir, 'pools.json');
@@ -60,6 +60,31 @@ export async function fetchWithRetry(poolId) {
 		}
 	}
 	throw lastErr;
+}
+
+// Fetch pool liquidity using poolmanager endpoint
+export async function fetchPoolLiquidity(poolId, endpointIdx = 0) {
+	const endpoint = restEndpoints[endpointIdx];
+	const url = `${endpoint}${liquidityApiPath(poolId)}`;
+
+	const res = await fetch(url);
+	if (!res.ok) {
+		throw new Error(`HTTP ${res.status} from ${endpoint}`);
+	}
+	return res.json();
+}
+
+// Fetch liquidity with retries
+export async function fetchLiquidityWithRetry(poolId) {
+	for (let attempt = 0; attempt < config.maxRetries; attempt++) {
+		const endpointIdx = attempt % restEndpoints.length;
+		try {
+			return await fetchPoolLiquidity(poolId, endpointIdx);
+		} catch {
+			// Silently continue on failure
+		}
+	}
+	return null;
 }
 
 // Delay helper using Bun.sleep

@@ -70,6 +70,23 @@ export async function decodePoolAssets(pool) {
 	return { ...pool, decodedAssets: decoded };
 }
 
+// Format amount with human-readable units
+function formatAmount(amount, denom) {
+	const num = BigInt(amount || '0');
+	// Most cosmos denoms use 6 decimals (uatom, uosmo, etc.)
+	const decimals = denom?.startsWith('u') || denom?.includes('/u') ? 6 :
+		denom?.includes('wei') || denom?.includes('ETH') ? 18 : 6;
+	const divisor = BigInt(10 ** decimals);
+	const whole = num / divisor;
+	const frac = num % divisor;
+	if (whole > 1000000n) {
+		return `${(Number(whole) / 1000000).toFixed(2)}M`;
+	} else if (whole > 1000n) {
+		return `${(Number(whole) / 1000).toFixed(2)}K`;
+	}
+	return whole.toString();
+}
+
 // Format pool for display
 export function formatPool(pool, decoded = false) {
 	const lines = [
@@ -80,11 +97,15 @@ export function formatPool(pool, decoded = false) {
 
 	if (decoded && pool.decodedAssets) {
 		for (const [key, asset] of Object.entries(pool.decodedAssets)) {
-			lines.push(`    ${key}: ${asset.display}`);
+			const liq = pool.liquidity?.[key];
+			const liqStr = liq ? ` [${formatAmount(liq.amount, liq.denom)}]` : '';
+			lines.push(`    ${key}: ${asset.display}${liqStr}`);
 		}
 	} else {
 		for (const [key, denom] of Object.entries(pool.assets)) {
-			lines.push(`    ${key}: ${denom}`);
+			const liq = pool.liquidity?.[key];
+			const liqStr = liq ? ` [${formatAmount(liq.amount, liq.denom)}]` : '';
+			lines.push(`    ${key}: ${denom}${liqStr}`);
 		}
 	}
 

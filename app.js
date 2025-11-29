@@ -1,5 +1,5 @@
 import { config, poolTypes } from './config.js';
-import { readPools, writePools, fetchWithRetry, delay } from './utils.js';
+import { readPools, writePools, fetchWithRetry, fetchLiquidityWithRetry, delay } from './utils.js';
 
 // Detect pool type from @type field
 function getPoolType(typeStr) {
@@ -21,12 +21,15 @@ function extractAssets(pool, type) {
 			break;
 
 		case poolTypes.stableswap:
-		case poolTypes.gamm:
 			if (pool.pool_liquidity) {
 				pool.pool_liquidity.forEach((asset, i) => {
 					assets[`token${i + 1}`] = asset.denom || '';
 				});
-			} else if (pool.pool_assets) {
+			}
+			break;
+
+		case poolTypes.gamm:
+			if (pool.pool_assets) {
 				pool.pool_assets.forEach((asset, i) => {
 					assets[`token${i + 1}`] = asset.token?.denom || '';
 				});
@@ -34,7 +37,6 @@ function extractAssets(pool, type) {
 			break;
 
 		case poolTypes.cosmwasm:
-			// CosmWasm pools may have different structures
 			if (pool.tokens) {
 				pool.tokens.forEach((token, i) => {
 					assets[`token${i + 1}`] = token || '';
@@ -44,6 +46,20 @@ function extractAssets(pool, type) {
 	}
 
 	return assets;
+}
+
+// Parse liquidity response into denom -> amount map
+function parseLiquidity(liquidityData) {
+	const liquidity = {};
+	if (liquidityData?.liquidity) {
+		liquidityData.liquidity.forEach((item, i) => {
+			liquidity[`token${i + 1}`] = {
+				denom: item.denom || '',
+				amount: item.amount || '0',
+			};
+		});
+	}
+	return liquidity;
 }
 
 // Extract fees based on pool type
@@ -74,15 +90,18 @@ function extractFees(pool, type) {
 }
 
 // Normalize pool data into consistent format
-function formatPool(data) {
-	const pool = data.pool;
+function formatPool(poolData, liquidityData) {
+	const pool = poolData.pool;
 	const type = getPoolType(pool['@type'] || '');
+	const assets = extractAssets(pool, type);
+	const liquidity = parseLiquidity(liquidityData);
 
 	return {
 		type,
 		id: pool.id || '',
 		address: pool.address || pool.contract_address || '',
-		assets: extractAssets(pool, type),
+		assets,
+		liquidity,
 		fees: extractFees(pool, type),
 	};
 }
@@ -101,10 +120,14 @@ async function collectPools() {
 
 	while (true) {
 		try {
-			const response = await fetchWithRetry(poolId);
+			// Fetch pool data and liquidity in parallel
+			const [poolResponse, liquidityResponse] = await Promise.all([
+				fetchWithRetry(poolId),
+				fetchLiquidityWithRetry(poolId),
+			]);
 
-			if (response?.pool) {
-				const formatted = formatPool(response);
+			if (poolResponse?.pool) {
+				const formatted = formatPool(poolResponse, liquidityResponse);
 				data.pools.push(formatted);
 				await writePools(data);
 				console.log(`Saved pool ${poolId} (${formatted.type})`);

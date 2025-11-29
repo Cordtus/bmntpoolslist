@@ -7,8 +7,10 @@ export const restEndpoints = [
 	'https://rest.osmosis.goldenratiostaking.net',
 ];
 
-// API path template
+// API path templates
 export const poolApiPath = (poolId) => `/osmosis/poolmanager/v1beta1/pools/${poolId}`;
+export const liquidityApiPath = (poolId) => `/osmosis/poolmanager/v1beta1/pools/${poolId}/total_pool_liquidity`;
+export const totalLiquidityPath = '/osmosis/poolmanager/v1beta1/total_liquidity';
 
 // Retry and delay configuration
 export const config = {

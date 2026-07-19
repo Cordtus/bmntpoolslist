@@ -1,8 +1,11 @@
 import { join } from 'path';
 import { decodeIbcDenom, formatDenom } from './denom.js';
+import { buildPoolIndex, findPoolIdsByBaseDenom, findPoolIdsByChannel } from './pool-index.js';
 import { calcUsdValue, formatUsd, getGeckoIdsForDenoms, fetchPrices } from './price.js';
 
 const poolsPath = join(import.meta.dir, 'data', 'pools.json');
+const denomsPath = join(import.meta.dir, 'data', 'denoms.json');
+const poolIndexPath = join(import.meta.dir, 'data', 'pool-index.json');
 
 // Load pools data
 async function loadPools() {
@@ -11,6 +14,48 @@ async function loadPools() {
 		return (await file.json()).pools || [];
 	}
 	return [];
+}
+
+async function loadJson(path, fallback) {
+	const file = Bun.file(path);
+	if (!await file.exists()) return fallback;
+	try {
+		return await file.json();
+	} catch {
+		return fallback;
+	}
+}
+
+async function loadPoolIndex(pools) {
+	const index = await loadJson(poolIndexPath, null);
+	if (index?.baseDenom && index?.channel) return index;
+	const denoms = await loadJson(denomsPath, {});
+	return buildPoolIndex(pools, denoms);
+}
+
+function poolsForIds(pools, ids) {
+	const byId = new Map(pools.map((pool) => [String(pool.id), pool]));
+	return ids.map((id) => byId.get(String(id))).filter(Boolean);
+}
+
+export function findPoolsByBaseDenom(pools, index, baseDenom) {
+	return poolsForIds(pools, findPoolIdsByBaseDenom(index, baseDenom));
+}
+
+export function findPoolsByChannel(pools, index, channelId) {
+	return poolsForIds(pools, findPoolIdsByChannel(index, channelId));
+}
+
+// Find pools by their raw or IBC-decoded base denom without a network call.
+export async function findByBaseDenom(baseDenom) {
+	const pools = await loadPools();
+	return findPoolsByBaseDenom(pools, await loadPoolIndex(pools), baseDenom);
+}
+
+// Find pools whose IBC trace includes a specific channel without a network call.
+export async function findByChannel(channelId) {
+	const pools = await loadPools();
+	return findPoolsByChannel(pools, await loadPoolIndex(pools), channelId);
 }
 
 // Get all assets from a pool as array
@@ -189,27 +234,7 @@ export async function getPoolTvl(pool) {
 	return totalUsd;
 }
 
-// Search with decoded denom matching
+// Compatibility alias for the former CLI command. This remains fully offline.
 export async function searchByBaseDenom(baseDenom) {
-	const pools = await loadPools();
-	const results = [];
-
-	for (const pool of pools) {
-		const assets = getPoolAssets(pool);
-		for (const asset of assets) {
-			if (asset.toLowerCase().includes(baseDenom.toLowerCase())) {
-				results.push(pool);
-				break;
-			}
-			if (asset.startsWith('ibc/')) {
-				const decoded = await decodeIbcDenom(asset);
-				if (decoded.baseDenom?.toLowerCase().includes(baseDenom.toLowerCase())) {
-					results.push(pool);
-					break;
-				}
-			}
-		}
-	}
-
-	return results;
+	return findByBaseDenom(baseDenom);
 }

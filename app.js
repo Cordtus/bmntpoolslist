@@ -1,172 +1,166 @@
-import { config, poolTypes } from './config.js';
-import { readPools, writePools, fetchWithRetry, fetchLiquidityWithRetry, delay } from './utils.js';
+import { mkdir, rename } from 'node:fs/promises';
+import { join } from 'path';
+import { config, grpcEndpoints } from './config.js';
+import { collectWithAdaptiveConcurrency, normalizePool, selectPoolUpdates } from './collector.js';
+import { GrpcClient } from './grpc.js';
+import { buildIbcCache } from './ibc.js';
+import { resolveCollectionMode } from './mode.js';
+import { buildPoolIndex } from './pool-index.js';
+import { retryForever } from './retry.js';
 
-// Detect pool type from @type field
-function getPoolType(typeStr) {
-	if (typeStr.includes(poolTypes.concentrated)) return poolTypes.concentrated;
-	if (typeStr.includes(poolTypes.stableswap)) return poolTypes.stableswap;
-	if (typeStr.includes(poolTypes.cosmwasm)) return poolTypes.cosmwasm;
-	if (typeStr.includes(poolTypes.gamm)) return poolTypes.gamm;
-	return 'unknown';
-}
+const dataDir = join(import.meta.dir, 'data');
+const paths = {
+	pools: join(dataDir, 'pools.json'),
+	pendingPools: join(dataDir, 'pools.pending.json'),
+	denoms: join(dataDir, 'denoms.json'),
+	channels: join(dataDir, 'channels.json'),
+	poolIndex: join(dataDir, 'pool-index.json'),
+	state: join(dataDir, 'collection-state.json'),
+};
 
-// Extract assets based on pool type
-function extractAssets(pool, type) {
-	const assets = {};
-
-	switch (type) {
-		case poolTypes.concentrated:
-			assets.token1 = pool.token0 || '';
-			assets.token2 = pool.token1 || '';
-			break;
-
-		case poolTypes.stableswap:
-			if (pool.pool_liquidity) {
-				pool.pool_liquidity.forEach((asset, i) => {
-					assets[`token${i + 1}`] = asset.denom || '';
-				});
-			}
-			break;
-
-		case poolTypes.gamm:
-			if (pool.pool_assets) {
-				pool.pool_assets.forEach((asset, i) => {
-					assets[`token${i + 1}`] = asset.token?.denom || '';
-				});
-			}
-			break;
-
-		case poolTypes.cosmwasm:
-			if (pool.tokens) {
-				pool.tokens.forEach((token, i) => {
-					assets[`token${i + 1}`] = token || '';
-				});
-			}
-			break;
+async function readJson(path, fallback) {
+	const file = Bun.file(path);
+	if (!await file.exists()) return fallback;
+	try {
+		return await file.json();
+	} catch (error) {
+		console.error(`Ignoring unreadable ${path}: ${error.message}`);
+		return fallback;
 	}
-
-	return assets;
 }
 
-// Parse liquidity response into denom -> amount map
-function parseLiquidity(liquidityData) {
-	const liquidity = {};
-	if (liquidityData?.liquidity) {
-		liquidityData.liquidity.forEach((item, i) => {
-			liquidity[`token${i + 1}`] = {
-				denom: item.denom || '',
-				amount: item.amount || '0',
-			};
-		});
+async function writeJsonAtomically(path, value) {
+	await mkdir(dataDir, { recursive: true });
+	const temporaryPath = `${path}.${process.pid}.tmp`;
+	await Bun.write(temporaryPath, JSON.stringify(value, null, 2));
+	await rename(temporaryPath, path);
+}
+
+function orderedPools(poolsById) {
+	return [...poolsById.values()].sort((left, right) => Number(left.id) - Number(right.id));
+}
+
+async function promptForMode() {
+	if (!process.stdin.isTTY) {
+		throw new Error('Choose --mode fresh or --mode partial when stdin is not interactive.');
 	}
-	return liquidity;
+	process.stdout.write('Collection mode: fresh snapshot or partial update? [fresh/partial] ');
+	for await (const chunk of process.stdin) return String(chunk);
+	return '';
 }
 
-// Extract fees based on pool type
-function extractFees(pool, type) {
-	const fees = { swapFee: '', exitFee: '' };
-
-	switch (type) {
-		case poolTypes.concentrated:
-			fees.swapFee = pool.spread_factor || '';
-			break;
-
-		case poolTypes.stableswap:
-			fees.swapFee = pool.pool_params?.swap_fee || '';
-			fees.exitFee = pool.pool_params?.exit_fee || '';
-			break;
-
-		case poolTypes.gamm:
-			fees.swapFee = pool.pool_params?.swap_fee || '';
-			fees.exitFee = pool.pool_params?.exit_fee || '';
-			break;
-
-		case poolTypes.cosmwasm:
-			// CosmWasm pools handle fees differently
-			break;
-	}
-
-	return fees;
-}
-
-// Normalize pool data into consistent format
-function formatPool(poolData, liquidityData) {
-	const pool = poolData.pool;
-	const type = getPoolType(pool['@type'] || '');
-	const assets = extractAssets(pool, type);
-	const liquidity = parseLiquidity(liquidityData);
-
-	return {
-		type,
-		id: pool.id || '',
-		address: pool.address || pool.contract_address || '',
-		assets,
-		liquidity,
-		fees: extractFees(pool, type),
+function retryReporter(label) {
+	return ({ attempt, error, delayMs }) => {
+		console.error(`${label} failed (${error.message}); retry ${attempt + 1} in ${Math.ceil(delayMs / 1_000)}s`);
 	};
 }
 
-// Main collection loop
-async function collectPools() {
-	const data = await readPools();
-	let poolId = data.pools.length > 0
-		? parseInt(data.pools[data.pools.length - 1].id) + 1
-		: 1;
+export async function collectPools(mode, grpc) {
+	await mkdir(dataDir, { recursive: true });
+	const current = await readJson(paths.pools, { pools: [] });
+	const previousState = await readJson(paths.state, {});
+	const pending = await readJson(paths.pendingPools, { pools: [] });
+	const resumingFreshSnapshot = mode === 'fresh' && previousState.mode === 'fresh' && !previousState.complete && pending.pools.length > 0;
+	const seedPools = resumingFreshSnapshot ? pending.pools : current.pools;
+	const selectionMode = resumingFreshSnapshot ? 'partial' : mode;
+	const workingPools = new Map((selectionMode === 'partial' ? seedPools : []).map(pool => [String(pool.id), pool]));
 
-	console.log(`Starting from pool ID ${poolId}`);
+	console.log('Loading pool definitions through gRPC...');
+	const response = await retryForever(
+		() => grpc.call('osmosis.poolmanager.v1beta1.Query', 'AllPools', {}),
+		{ ...config, onRetry: retryReporter('AllPools') },
+	);
+	const allPools = response.pools || [];
+	const targets = selectPoolUpdates(allPools, seedPools, selectionMode);
+	console.log(`Collecting liquidity for ${targets.length} of ${allPools.length} pools...`);
 
-	let consecutiveFailures = 0;
-	let shortWaitCount = 0;
+	let completedSinceStart = 0;
+	let checkpoint = Promise.resolve();
+	const checkpointProgress = () => {
+		checkpoint = checkpoint.then(async () => {
+			const pools = orderedPools(workingPools);
+			await writeJsonAtomically(paths.pendingPools, { pools });
+			await writeJsonAtomically(paths.state, {
+				mode,
+				complete: false,
+				updatedAt: new Date().toISOString(),
+				completedPools: pools.length,
+			});
+		});
+		return checkpoint;
+	};
 
-	while (true) {
-		try {
-			// Fetch pool data and liquidity in parallel
-			const [poolResponse, liquidityResponse] = await Promise.all([
-				fetchWithRetry(poolId),
-				fetchLiquidityWithRetry(poolId),
-			]);
+	await collectWithAdaptiveConcurrency(targets, async rawPool => {
+		const poolId = rawPool.id || rawPool.poolId;
+		const liquidity = await grpc.call(
+			'osmosis.poolmanager.v1beta1.Query',
+			'TotalPoolLiquidity',
+			{ poolId: BigInt(poolId) },
+		);
+		return normalizePool(rawPool, liquidity);
+	}, {
+		...config,
+		onRetry: retryReporter('Pool liquidity'),
+		onResult: async pool => {
+			workingPools.set(pool.id, pool);
+			completedSinceStart++;
+			if (completedSinceStart % config.checkpointInterval === 0) await checkpointProgress();
+		},
+	});
+	await checkpoint;
 
-			if (poolResponse?.pool) {
-				const formatted = formatPool(poolResponse, liquidityResponse);
-				data.pools.push(formatted);
-				await writePools(data);
-				console.log(`Saved pool ${poolId} (${formatted.type})`);
-				poolId++;
-				consecutiveFailures = 0;
-			} else {
-				throw new Error('No pool data in response');
-			}
-		} catch (err) {
-			console.error(`Failed pool ${poolId}: ${err.message}`);
-			consecutiveFailures++;
+	const pools = orderedPools(workingPools);
+	const denomDocument = await readJson(paths.denoms, { entries: {} });
+	const channelDocument = await readJson(paths.channels, { entries: {} });
+	console.log('Updating immutable IBC trace and source-chain caches through gRPC...');
+	const ibc = await buildIbcCache({
+		pools,
+		denoms: denomDocument.entries,
+		channels: channelDocument.entries,
+		grpc,
+		retryOptions: { ...config, onRetry: retryReporter('IBC metadata') },
+	});
+	const index = buildPoolIndex(pools, ibc.denoms);
 
-			// Skip pool after max retries
-			if (consecutiveFailures >= config.maxRetries) {
-				console.log(`Skipping pool ${poolId}`);
-				poolId++;
-				consecutiveFailures = 0;
-			}
+	await writeJsonAtomically(paths.denoms, {
+		version: 1,
+		generatedAt: new Date().toISOString(),
+		entries: ibc.denoms,
+	});
+	await writeJsonAtomically(paths.channels, {
+		version: 1,
+		generatedAt: new Date().toISOString(),
+		entries: ibc.channels,
+	});
+	await writeJsonAtomically(paths.poolIndex, {
+		version: 1,
+		generatedAt: new Date().toISOString(),
+		...index,
+	});
+	await writeJsonAtomically(paths.pools, { pools });
+	await writeJsonAtomically(paths.state, {
+		mode,
+		complete: true,
+		updatedAt: new Date().toISOString(),
+		completedPools: pools.length,
+	});
 
-			// Backoff on repeated failures
-			if (consecutiveFailures >= config.shortWaitThreshold) {
-				if (shortWaitCount >= config.shortWaitMaxCount) {
-					console.log('Long wait (6 hours)...');
-					await delay(config.longWaitMs);
-					shortWaitCount = 0;
-				} else {
-					console.log('Short wait (5 minutes)...');
-					await delay(config.shortWaitMs);
-					shortWaitCount++;
-				}
-			}
-		}
+	console.log(`Saved ${pools.length} pools, ${Object.keys(ibc.denoms).length} IBC traces, and the local pool index.`);
+}
 
-		await delay(config.requestDelayMs);
+async function main() {
+	const mode = await resolveCollectionMode(process.argv.slice(2), promptForMode);
+	const grpc = new GrpcClient(grpcEndpoints, { timeoutMs: config.requestTimeoutMs });
+	try {
+		await collectPools(mode, grpc);
+	} finally {
+		grpc.close();
 	}
 }
 
-// Entry point
-collectPools().catch(err => {
-	console.error('Fatal error:', err);
-	process.exit(1);
-});
+if (import.meta.main) {
+	main().catch(error => {
+		console.error('Collection failed:', error.message);
+		process.exit(1);
+	});
+}

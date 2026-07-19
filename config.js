@@ -1,31 +1,20 @@
-// REST API endpoints for Osmosis pool data
-export const restEndpoints = [
-	'https://lcd.osmosis.zone',
-	'https://rest.lavenderfive.com:443/osmosis',
-	'https://rest-osmosis.ecostake.com',
-	'https://osmosis-api.polkachu.com',
-	'https://rest.osmosis.goldenratiostaking.net',
+// Public Osmosis gRPC endpoints. The client rotates after a transport or gRPC error.
+export const grpcEndpoints = [
+	// Polkachú exposes h2c gRPC here, so this endpoint must remain HTTP/plaintext.
+	'http://osmosis-grpc.polkachu.com:12590',
+	'https://osmosis.lavenderfive.com:443',
+	'https://osmosis.grpc.stakin-nodes.com:443',
+	'https://osmosis-grpc.publicnode.com:443',
+	'https://grpc.osmosis.validatus.com:443',
+	'https://grpc.osmosis.citizenweb3.com:443',
 ];
 
-// API path templates
-export const poolApiPath = (poolId) => `/osmosis/poolmanager/v1beta1/pools/${poolId}`;
-export const liquidityApiPath = (poolId) => `/osmosis/poolmanager/v1beta1/pools/${poolId}/total_pool_liquidity`;
-export const totalLiquidityPath = '/osmosis/poolmanager/v1beta1/total_liquidity';
-
-// Retry and delay configuration
 export const config = {
-	maxRetries: 5,
-	requestDelayMs: 100,      // fast iteration with multiple endpoints
-	shortWaitMs: 60000,       // 1 minute
-	longWaitMs: 300000,       // 5 minutes
-	shortWaitThreshold: 15,   // consecutive failures before short wait
-	shortWaitMaxCount: 3,     // short waits before long wait
-};
-
-// Pool type identifiers
-export const poolTypes = {
-	concentrated: 'concentratedliquidity',
-	gamm: 'gamm',
-	cosmwasm: 'cosmwasmpool',
-	stableswap: 'stableswap',
+	requestTimeoutMs: 30_000,
+	initialConcurrency: 24,
+	maxConcurrency: 24,
+	minConcurrency: 1,
+	initialDelayMs: 500,
+	maxDelayMs: 60_000,
+	checkpointInterval: 25,
 };

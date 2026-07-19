@@ -8,6 +8,8 @@ import {
 	formatPool,
 	formatPoolWithUsd,
 	getPoolTvl,
+	findByBaseDenom,
+	findByChannel,
 	searchByBaseDenom,
 } from './query.js';
 import { formatUsd } from './price.js';
@@ -28,14 +30,17 @@ Commands:
   find-exact <asset>        Find pools with exact asset match
   find-all <a1> <a2> ...    Find pools containing ALL assets
   find-any <a1> <a2> ...    Find pools containing ANY asset
-  search <baseDenom>        Search by base denom (decodes IBC)
+  token <baseDenom>         List pools containing a raw or IBC-decoded base denom
+  channel <channel-id>      List pools whose IBC trace includes a channel
+  search <baseDenom>        Alias for token
   pool <id>                 Get pool by ID
   decode <ibc/hash>         Decode IBC denom
 
 Examples:
   bun cli.js find uosmo
   bun cli.js find-all uosmo uatom
-  bun cli.js search atom
+  bun cli.js token uatom
+  bun cli.js channel channel-0
   bun cli.js pool 1
   bun cli.js decode ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2
 `);
@@ -120,18 +125,39 @@ async function run() {
 			break;
 		}
 
+		case 'token':
 		case 'search': {
 			const term = args[1];
 			if (!term) {
 				console.error('Error: base denom required');
 				return;
 			}
-			console.log(`Searching for "${term}" (decoding IBC denoms)...\n`);
-			const pools = await searchByBaseDenom(term);
-			console.log(`Found ${pools.length} pools:\n`);
+			const pools = cmd === 'search'
+				? await searchByBaseDenom(term)
+				: await findByBaseDenom(term);
+			console.log(`Found ${pools.length} pools containing base denom "${term}":\n`);
 			for (const pool of pools.slice(0, 10)) {
 				const decoded = await decodePoolAssets(pool);
-				console.log(await formatPoolWithUsd(decoded, true));
+				console.log(formatPool(decoded, true));
+				console.log();
+			}
+			if (pools.length > 10) {
+				console.log(`... and ${pools.length - 10} more`);
+			}
+			break;
+		}
+
+		case 'channel': {
+			const channelId = args[1];
+			if (!channelId) {
+				console.error('Error: channel ID required');
+				return;
+			}
+			const pools = await findByChannel(channelId);
+			console.log(`Found ${pools.length} pools using ${channelId}:\n`);
+			for (const pool of pools.slice(0, 10)) {
+				const decoded = await decodePoolAssets(pool);
+				console.log(formatPool(decoded, true));
 				console.log();
 			}
 			if (pools.length > 10) {

@@ -1,150 +1,88 @@
 # Osmosis Pool Collector
 
-A Bun-native tool for collecting, querying, and analyzing Osmosis DEX liquidity pools with real-time USD pricing.
+Build a local, searchable snapshot of Osmosis liquidity pools. The collector reads chain data over gRPC and stores pools, IBC denom metadata, and lookup indexes on disk.
 
-## Features
+## Quick start
 
-- Collects all pool types: GAMM, Concentrated Liquidity, StableSwap, CosmWasm
-- IBC denom decoding with caching
-- Real-time USD pricing via CoinGecko (using Cosmos Chain Registry for token mapping)
-- Multi-endpoint rotation for reliability
-- Incremental collection with resume support
-
-## Requirements
-
-- [Bun](https://bun.sh) >= 1.0.0
-
-## Installation
+Install [Bun](https://bun.sh), then install the project dependencies:
 
 ```bash
-git clone https://github.com/Cordtus/bmntpoolslist.git
-cd bmntpoolslist
+bun install
 ```
 
-No dependencies to install - uses Bun native APIs.
+Create a complete new snapshot:
 
-## Usage
+```bash
+bun run start -- --mode fresh
+```
 
-### Collect Pool Data
+When it finishes, search every pool containing ATOM—including IBC ATOM denoms:
+
+```bash
+bun run cli.js token uatom
+```
+
+## Collecting data
+
+Run the collector without a flag to choose a mode interactively:
 
 ```bash
 bun run start
-# or
-bun run app.js
 ```
 
-This fetches all Osmosis pools and saves them to `data/pools.json`. Collection resumes from the last saved pool ID if interrupted.
-
-### Query Pools
+Use `fresh` when you want a new full snapshot. It fetches all pools and writes the finished result to `data/pools.json`. If interrupted, run the same command again to resume from its checkpoint.
 
 ```bash
-# Search by base denom (decodes IBC denoms, shows USD values)
-bun run cli.js search atom
-bun run cli.js search rowan
+bun run start -- --mode fresh
+```
 
-# Find pools containing an asset (partial match)
+Use `partial` for a fast follow-up. It keeps saved liquidity, refreshes pool metadata, and fetches liquidity only for pools that are missing or incomplete.
+
+```bash
+bun run start -- --mode partial
+```
+
+Required chain requests automatically back off and retry after rate limits or temporary gRPC failures. The primary endpoint is Polkachú’s plaintext gRPC service, with public TLS gRPC failovers.
+
+## Search your snapshot
+
+All commands below read local generated data; they do not make a chain request.
+
+```bash
+# Pools containing a native denom or an IBC denom mapped to it
+bun run cli.js token uatom
+
+# Pools whose IBC trace uses a specific Osmosis channel
+bun run cli.js channel channel-0
+
+# Find a raw asset denom (partial or exact match)
 bun run cli.js find uosmo
-
-# Find pools with exact asset match
 bun run cli.js find-exact uosmo
 
-# Find pools containing ALL specified assets
+# Find pools containing every listed asset
 bun run cli.js find-all uosmo uatom
 
-# Find pools containing ANY of the specified assets
-bun run cli.js find-any uosmo uatom ujuno
+# `search` is an alias for `token`
+bun run cli.js search uatom
 
-# Get specific pool by ID (with USD values)
+# Inspect one pool; may fetch optional off-chain USD prices
 bun run cli.js pool 1
-
-# Decode an IBC denom
-bun run cli.js decode ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2
 ```
 
-### Example Output
+Run `bun run cli.js --help` for the complete command list.
 
+## Generated files
+
+- `data/pools.json` — pool assets, liquidity, and fees.
+- `data/denoms.json` — IBC hash, base denom, trace path, channels, and direct source chain ID.
+- `data/channels.json` — cached channel-to-source-chain metadata.
+- `data/pool-index.json` — fast token and channel lookup indexes.
+
+The direct `sourceChainId` is the counterparty of the first channel in an IBC trace. The complete trace path remains available in `data/denoms.json`.
+
+## Development
+
+```bash
+bun test
+RUN_LIVE_GRPC=1 bun test test/grpc.integration.test.js
 ```
-Pool #1 (gamm)
-  Address: osmo1mw0ac6rwlp5r8wapwk3zs6g29h8fcscxqakdzw9emkne6c8wjp9q0t3v8t
-  Assets:
-    token1: uatom (channel-0) [279.41K] ($681.76K)
-    token2: uosmo [8.72M] ($681.97K)
-  Total TVL: $1.36M
-  Swap Fee: 0.20%
-```
-
-## Project Structure
-
-```
-.
-├── app.js          # Main collector - fetches pools from REST APIs
-├── cli.js          # Command-line interface for querying
-├── config.js       # REST endpoints and configuration
-├── denom.js        # IBC denom decoding with cache
-├── price.js        # USD pricing via CoinGecko + Chain Registry
-├── query.js        # Pool search and formatting functions
-├── utils.js        # File I/O and fetch utilities
-└── data/
-    ├── pools.json      # Collected pool data
-    ├── denom_cache.json # IBC denom decode cache
-    ├── assetlist.json   # Chain registry asset cache
-    └── prices.json      # Price cache
-```
-
-## Configuration
-
-Edit `config.js` to customize:
-
-- `restEndpoints` - REST API endpoints (rotates on failure)
-- `config.maxRetries` - Retry attempts per pool
-- `config.requestDelayMs` - Delay between requests
-
-Default endpoints:
-- lcd.osmosis.zone
-- rest.lavenderfive.com/osmosis
-- rest-osmosis.ecostake.com
-- osmosis-api.polkachu.com
-- rest.osmosis.goldenratiostaking.net
-
-## Pool Types
-
-| Type | Description |
-|------|-------------|
-| `gamm` | Classic XYK AMM pools |
-| `stableswap` | Curve-style stable pools |
-| `concentratedliquidity` | Uniswap v3 style CL pools |
-| `cosmwasmpool` | CosmWasm-based pools (Transmuter, etc.) |
-
-## Data Format
-
-Each pool in `pools.json`:
-
-```json
-{
-  "type": "gamm",
-  "id": "1",
-  "address": "osmo1...",
-  "assets": {
-    "token1": "ibc/27394...",
-    "token2": "uosmo"
-  },
-  "liquidity": {
-    "token1": { "denom": "ibc/27394...", "amount": "279410000000" },
-    "token2": { "denom": "uosmo", "amount": "8720000000000" }
-  },
-  "fees": {
-    "swapFee": "0.002",
-    "exitFee": "0"
-  }
-}
-```
-
-## Caching
-
-- **IBC denoms**: Cached indefinitely in `data/denom_cache.json`
-- **Asset list**: Cached 24 hours in `data/assetlist.json`
-- **Prices**: Cached 5 minutes in `data/prices.json`
-
-## License
-
-MIT

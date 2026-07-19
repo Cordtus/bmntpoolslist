@@ -1,103 +1,58 @@
 import { join } from 'path';
 
 const denomCachePath = join(import.meta.dir, 'data', 'denoms.json');
+let denomCache;
 
-// In-memory cache for denom lookups
-let denomCache = null;
-
-// Load denom cache from disk
 async function loadCache() {
 	if (denomCache) return denomCache;
 	const file = Bun.file(denomCachePath);
-	if (await file.exists()) {
-		try {
-			denomCache = await file.json();
-		} catch {
-			denomCache = {};
-		}
-	} else {
+	if (!await file.exists()) {
+		denomCache = {};
+		return denomCache;
+	}
+	try {
+		const data = await file.json();
+		denomCache = data.entries || data;
+	} catch {
 		denomCache = {};
 	}
 	return denomCache;
 }
 
-// Save denom cache to disk
-async function saveCache() {
-	if (denomCache) {
-		await Bun.write(denomCachePath, JSON.stringify(denomCache, null, 2));
-	}
-}
-
-// Decode IBC denom hash to trace info
-export async function decodeIbcDenom(denom) {
+export function decodeIbcDenomFromCache(denom, cache) {
 	if (!denom.startsWith('ibc/')) return { denom, isIbc: false };
-
-	const cache = await loadCache();
 	const hash = denom.slice(4);
-
-	if (cache[hash]) {
-		return { denom, isIbc: true, ...cache[hash] };
+	const entries = cache?.entries || cache || {};
+	const trace = entries[hash];
+	if (!trace) {
+		return { denom, isIbc: true, baseDenom: null, path: null, channelIds: [], sourceChainId: null };
 	}
-
-	// Query Osmosis REST API for denom trace
-	const endpoints = [
-		'https://rest-osmosis.ecostake.com',
-		'https://lcd.osmosis.zone',
-	];
-
-	for (const endpoint of endpoints) {
-		try {
-			const url = `${endpoint}/ibc/apps/transfer/v1/denom_traces/${hash}`;
-			const res = await fetch(url);
-			if (!res.ok) continue;
-
-			const data = await res.json();
-			if (data.denom_trace) {
-				const trace = {
-					baseDenom: data.denom_trace.base_denom,
-					path: data.denom_trace.path,
-				};
-				cache[hash] = trace;
-				await saveCache();
-				return { denom, isIbc: true, ...trace };
-			}
-		} catch {
-			continue;
-		}
-	}
-
-	return { denom, isIbc: true, baseDenom: null, path: null };
+	return { denom, isIbc: true, ...trace };
 }
 
-// Decode multiple denoms in parallel
+export async function decodeIbcDenom(denom) {
+	return decodeIbcDenomFromCache(denom, await loadCache());
+}
+
 export async function decodeMultiple(denoms) {
-	const results = await Promise.all(denoms.map(decodeIbcDenom));
-	return Object.fromEntries(results.map(r => [r.denom, r]));
+	const cache = await loadCache();
+	return Object.fromEntries(denoms.map(denom => [denom, decodeIbcDenomFromCache(denom, cache)]));
 }
 
-// Extract chain from IBC path (e.g., "transfer/channel-0" -> channel info)
 export function parseIbcPath(path) {
-	if (!path) return null;
+	if (!path) return [];
 	const parts = path.split('/');
 	const channels = [];
-	for (let i = 0; i < parts.length; i += 2) {
-		if (parts[i] === 'transfer' && parts[i + 1]) {
-			channels.push(parts[i + 1]);
-		}
+	for (let index = 0; index < parts.length; index += 2) {
+		if (parts[index] === 'transfer' && parts[index + 1]) channels.push(parts[index + 1]);
 	}
 	return channels;
 }
 
-// Get human-readable denom name
 export function formatDenom(decoded) {
-	if (!decoded.isIbc) return decoded.denom;
-	if (!decoded.baseDenom) return decoded.denom;
-	const channels = parseIbcPath(decoded.path);
-	if (channels?.length === 1) {
-		return `${decoded.baseDenom} (${channels[0]})`;
-	}
-	if (channels?.length > 1) {
-		return `${decoded.baseDenom} (${channels.join(' -> ')})`;
-	}
-	return decoded.baseDenom;
+	if (!decoded.isIbc || !decoded.baseDenom) return decoded.denom;
+	const channels = decoded.channelIds?.length ? decoded.channelIds : parseIbcPath(decoded.path);
+	return channels.length > 0
+		? `${decoded.baseDenom} (${channels.join(' -> ')})`
+		: decoded.baseDenom;
 }

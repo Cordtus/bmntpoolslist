@@ -1,54 +1,71 @@
-# Lazy Osmosis Pools List Generator
+# Osmosis Pool Collector
 
-### Application Overview
+Build a local snapshot of Osmosis pools, then search it from your terminal.
 
-This application is designed to fetch and process pool data from the Osmosis blockchain, specifically targeting liquidity pools. It handles the retrieval, formatting, and storage of data, cycling through multiple REST API endpoints to ensure robustness against failures.
+## Setup
 
-### Setup Process
+Install [Bun](https://bun.sh), then install dependencies:
 
-1. **Installation**: 
-   - Clone the repository containing this code.
-   - Ensure Node.js is installed on your system.
-   - Install the necessary dependencies by running `npm install` in the project directory. The main dependency is `node-fetch` for handling HTTP requests.
+```bash
+bun install
+```
 
-2. **Configuration**: 
-   - The configuration of REST API endpoints is managed in the `config.js` file. Update the `restAddresses` array with the appropriate REST endpoints for fetching Osmosis pool data.
+## Build pool data
 
-3. **Data Directory Setup**: 
-   - The application ensures that a `data` directory exists in the project root. This directory will contain a `pools.json` file where the fetched pool data will be stored.
+For your first run, create a complete snapshot:
 
-### How It Works
+```bash
+bun run generate-pools:fresh
+```
 
-1. **Initial Setup**:
-   - The application starts by checking for an existing `pools.json` file. If it exists, it reads the last processed pool ID to resume fetching from where it left off. If the file doesn't exist, it creates a new one and starts from pool ID 1.
+To choose between a full or partial update when you run the command, use:
 
-2. **Data Fetching and Processing**:
-   - The main function `fetchAndProcessPoolData` is responsible for fetching data for each pool starting from the specified pool ID. 
-   - It cycles through the provided REST endpoints (`restAddresses`) to fetch data, ensuring redundancy in case an endpoint fails.
-   - For each pool, it formats the data based on the pool type (either concentrated liquidity or GAMM) and appends it to the `pools.json` file.
+```bash
+bun run generate-pools
+```
 
-3. **Error Handling**:
-   - The application includes robust error handling with retry logic. If a fetch operation fails, it retries up to 5 times before moving to the next pool ID or switching to the next REST endpoint.
-   - After a certain number of consecutive failures, the application introduces delays (5 minutes or 6 hours) to avoid overwhelming the endpoints and to allow any temporary issues to resolve.
+Use a partial update to reuse saved pool liquidity and fetch only missing or incomplete data:
 
-4. **Output**:
-   - The processed data for each pool is stored in the `pools.json` file within the `data` directory. This JSON file contains an array of pool objects, each formatted with relevant details like pool type, assets, fees, and address.
+```bash
+bun run generate-pools:partial
+```
 
-### Key Functions
+The generated snapshot is stored in `data/`.
 
-- **`readPoolsFile()`**: Reads the existing `pools.json` file or initializes a new one if it doesn't exist.
-- **`writePoolsFile()`**: Writes the fetched and formatted pool data back to the `pools.json` file.
-- **`fetchPoolData()`**: Fetches pool data from the specified REST API endpoint.
-- **`formatData()`**: Formats the raw data received from the API into a structured JSON object.
-- **`handleFailuresAndDelays()`**: Manages delays and retries based on consecutive failures.
+## Search pools
 
-### Data Output
+Run the guided search to choose what you want to find:
 
-The output of this application is a `pools.json` file containing a collection of pool data objects. Each object includes:
-- Pool type (`concentratedliquidity` or `gamm`)
-- Pool ID
-- Associated assets (e.g., token1, token2)
-- Fees (swap fee, exit fee)
-- Pool address
+```bash
+bun run search-pools
+```
 
-This data can be used for analysis, reporting, or further processing as needed.
+Or use a direct command:
+
+```bash
+# Every pool containing ATOM, including decoded IBC ATOM
+bun run search-pools token uatom
+
+# Pools whose IBC trace includes a channel
+bun run search-pools channel channel-0
+
+# Pools containing an exact or partial asset denom
+bun run search-pools asset uosmo
+
+# Pools containing all or any listed assets
+bun run search-pools assets all uosmo uatom
+bun run search-pools assets any uosmo uatom
+
+# Inspect a pool or decode an IBC denom
+bun run search-pools pool 1
+bun run search-pools decode ibc/HASH
+```
+
+Run `bun run search-pools --help` to see the available commands.
+
+## Development
+
+```bash
+bun test
+RUN_LIVE_GRPC=1 bun test test/grpc.integration.test.js
+```

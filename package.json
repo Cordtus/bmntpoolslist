@@ -9,6 +9,10 @@
   },
   "scripts": {
     "start": "bun run app.js",
+    "generate-pools": "bun run app.js",
+    "generate-pools:fresh": "bun run app.js --mode fresh",
+    "generate-pools:partial": "bun run app.js --mode partial",
+    "search-pools": "bun run cli.js",
     "dev": "bun --watch app.js",
     "query": "bun run cli.js",
     "test": "bun test"

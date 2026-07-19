@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+import { createInterface } from 'node:readline/promises';
 import {
 	findByAsset,
 	findByAssets,
@@ -7,54 +8,83 @@ import {
 	decodePoolAssets,
 	formatPool,
 	formatPoolWithUsd,
-	getPoolTvl,
 	findByBaseDenom,
 	findByChannel,
 	searchByBaseDenom,
 } from './query.js';
-import { formatUsd } from './price.js';
 import { decodeIbcDenom, formatDenom } from './denom.js';
+import { buildPromptedQuery } from './search-flow.js';
 
 const args = process.argv.slice(2);
-const cmd = args[0];
+const initialCommand = args[0];
 
 function printUsage() {
 	console.log(`
 Osmosis Pool Query CLI
 
 Usage:
-  bun cli.js <command> [options]
+  bun run search-pools [command] [value]
 
 Commands:
-  find <asset>              Find pools containing asset (partial match)
-  find-exact <asset>        Find pools with exact asset match
-  find-all <a1> <a2> ...    Find pools containing ALL assets
-  find-any <a1> <a2> ...    Find pools containing ANY asset
   token <baseDenom>         List pools containing a raw or IBC-decoded base denom
   channel <channel-id>      List pools whose IBC trace includes a channel
+  asset <denom>             Find pools containing an asset denom
+  assets <all|any> <...>    Find pools containing every or any listed asset
   search <baseDenom>        Alias for token
   pool <id>                 Get pool by ID
   decode <ibc/hash>         Decode IBC denom
 
 Examples:
-  bun cli.js find uosmo
-  bun cli.js find-all uosmo uatom
-  bun cli.js token uatom
-  bun cli.js channel channel-0
-  bun cli.js pool 1
-  bun cli.js decode ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2
+  bun run search-pools
+  bun run search-pools token uatom
+  bun run search-pools channel channel-0
+  bun run search-pools pool 1
 `);
 }
 
+function isCompleteQuery(query) {
+	if (!query?.command || query.args.length === 0) return false;
+	if (query.command === 'assets') {
+		return ['all', 'any'].includes(query.args[0]) && query.args.length >= 3;
+	}
+	return true;
+}
+
+async function promptForQuery() {
+	if (!process.stdin.isTTY) return null;
+	const readline = createInterface({ input: process.stdin, output: process.stdout });
+	try {
+		while (true) {
+			const query = await buildPromptedQuery(question => readline.question(`${question}\n> `));
+			if (isCompleteQuery(query)) return query;
+			console.log('Please choose an option and provide the requested value.');
+		}
+	} finally {
+		readline.close();
+	}
+}
+
 async function run() {
-	if (!cmd || cmd === 'help' || cmd === '--help' || cmd === '-h') {
+	if (['help', '--help', '-h'].includes(initialCommand)) {
 		printUsage();
 		return;
 	}
 
+	const promptedQuery = !initialCommand || ['ask', 'wizard'].includes(initialCommand)
+		? await promptForQuery()
+		: null;
+	if (!initialCommand && !promptedQuery) {
+		printUsage();
+		return;
+	}
+
+	const cmd = promptedQuery?.command || initialCommand;
+	const commandArgs = promptedQuery?.args || args.slice(1);
+
 	switch (cmd) {
-		case 'find': {
-			const term = args[1];
+		case 'find':
+		case 'asset': {
+			const term = commandArgs[0];
 			if (!term) {
 				console.error('Error: asset required');
 				return;
@@ -72,7 +102,7 @@ async function run() {
 		}
 
 		case 'find-exact': {
-			const term = args[1];
+			const term = commandArgs[0];
 			if (!term) {
 				console.error('Error: asset required');
 				return;
@@ -90,7 +120,7 @@ async function run() {
 		}
 
 		case 'find-all': {
-			const terms = args.slice(1);
+			const terms = commandArgs;
 			if (terms.length < 2) {
 				console.error('Error: at least 2 assets required');
 				return;
@@ -108,7 +138,7 @@ async function run() {
 		}
 
 		case 'find-any': {
-			const terms = args.slice(1);
+			const terms = commandArgs;
 			if (terms.length < 2) {
 				console.error('Error: at least 2 assets required');
 				return;
@@ -125,9 +155,30 @@ async function run() {
 			break;
 		}
 
+		case 'assets': {
+			const mode = commandArgs[0];
+			const terms = commandArgs.slice(1);
+			if (!['all', 'any'].includes(mode) || terms.length < 2) {
+				console.error('Error: use "assets all <a1> <a2>" or "assets any <a1> <a2>"');
+				return;
+			}
+			const pools = mode === 'all'
+				? await findByAssets(terms)
+				: await findByAnyAsset(terms);
+			console.log(`Found ${pools.length} pools containing ${mode.toUpperCase()} of [${terms.join(', ')}]:\n`);
+			for (const pool of pools.slice(0, 20)) {
+				console.log(formatPool(pool));
+				console.log();
+			}
+			if (pools.length > 20) {
+				console.log(`... and ${pools.length - 20} more`);
+			}
+			break;
+		}
+
 		case 'token':
 		case 'search': {
-			const term = args[1];
+			const term = commandArgs[0];
 			if (!term) {
 				console.error('Error: base denom required');
 				return;
@@ -148,7 +199,7 @@ async function run() {
 		}
 
 		case 'channel': {
-			const channelId = args[1];
+			const channelId = commandArgs[0];
 			if (!channelId) {
 				console.error('Error: channel ID required');
 				return;
@@ -167,7 +218,7 @@ async function run() {
 		}
 
 		case 'pool': {
-			const id = args[1];
+			const id = commandArgs[0];
 			if (!id) {
 				console.error('Error: pool ID required');
 				return;
@@ -183,7 +234,7 @@ async function run() {
 		}
 
 		case 'decode': {
-			const denom = args[1];
+			const denom = commandArgs[0];
 			if (!denom) {
 				console.error('Error: IBC denom required');
 				return;

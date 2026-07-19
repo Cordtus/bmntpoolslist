@@ -1,7 +1,7 @@
 import { mkdir, rename } from 'node:fs/promises';
 import { join } from 'path';
 import { config, grpcEndpoints } from './config.js';
-import { collectWithAdaptiveConcurrency, normalizePool, selectPoolUpdates } from './collector.js';
+import { collectWithAdaptiveConcurrency, normalizePool, refreshPoolMetadata, selectPoolUpdates } from './collector.js';
 import { GrpcClient } from './grpc.js';
 import { buildIbcCache } from './ibc.js';
 import { resolveCollectionMode } from './mode.js';
@@ -63,7 +63,6 @@ export async function collectPools(mode, grpc) {
 	const resumingFreshSnapshot = mode === 'fresh' && previousState.mode === 'fresh' && !previousState.complete && pending.pools.length > 0;
 	const seedPools = resumingFreshSnapshot ? pending.pools : current.pools;
 	const selectionMode = resumingFreshSnapshot ? 'partial' : mode;
-	const workingPools = new Map((selectionMode === 'partial' ? seedPools : []).map(pool => [String(pool.id), pool]));
 
 	console.log('Loading pool definitions through gRPC...');
 	const response = await retryForever(
@@ -71,7 +70,14 @@ export async function collectPools(mode, grpc) {
 		{ ...config, onRetry: retryReporter('AllPools') },
 	);
 	const allPools = response.pools || [];
-	const targets = selectPoolUpdates(allPools, seedPools, selectionMode);
+	const refreshedPools = selectionMode === 'partial'
+		? refreshPoolMetadata(allPools, seedPools)
+		: [];
+	const completeSeedPools = previousState.complete
+		? refreshedPools.map(pool => ({ ...pool, liquidityComplete: true }))
+		: refreshedPools;
+	const workingPools = new Map(completeSeedPools.map(pool => [String(pool.id), pool]));
+	const targets = selectPoolUpdates(allPools, completeSeedPools, selectionMode);
 	console.log(`Collecting liquidity for ${targets.length} of ${allPools.length} pools...`);
 
 	let completedSinceStart = 0;

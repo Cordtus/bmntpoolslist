@@ -80,11 +80,37 @@ function poolType(typeUrl = '') {
 	return 'unknown';
 }
 
+function decimalFromAtomic(value) {
+	const raw = String(value || '');
+	if (!/^-?\d+$/.test(raw)) return raw;
+
+	const negative = raw.startsWith('-');
+	const amount = BigInt(negative ? raw.slice(1) : raw);
+	const scale = 1_000_000_000_000_000_000n;
+	const whole = amount / scale;
+	const fractional = (amount % scale).toString().padStart(18, '0').replace(/0+$/, '');
+	return `${negative ? '-' : ''}${whole}${fractional ? `.${fractional}` : ''}`;
+}
+
 function normalizeLiquidity(liquidity = []) {
 	return Object.fromEntries(liquidity.map((entry, index) => [
 		`token${index + 1}`,
 		{ denom: entry.denom || '', amount: entry.amount || '0' },
 	]));
+}
+
+function assetDenomsFromLiquidity(liquidity) {
+	const denoms = [];
+	for (const entry of Object.values(liquidity)) {
+		const raw = String(entry?.denom || '');
+		const ibcDenoms = raw.match(/ibc\/[0-9a-f]{64}/gi) || [];
+		if (ibcDenoms.length > 0) {
+			denoms.push(...ibcDenoms);
+			continue;
+		}
+		if (/^[a-zA-Z][a-zA-Z0-9/:._-]*$/.test(raw)) denoms.push(raw);
+	}
+	return Object.fromEntries(denoms.map((denom, index) => [`token${index + 1}`, denom]));
 }
 
 function extractAssets(pool, liquidity) {
@@ -103,7 +129,7 @@ function extractAssets(pool, liquidity) {
 			asset.denom || '',
 		]));
 	}
-	return Object.fromEntries(Object.entries(liquidity).map(([key, entry]) => [key, entry.denom]));
+	return assetDenomsFromLiquidity(liquidity);
 }
 
 export function normalizePool(pool, liquidityResponse) {
@@ -114,19 +140,37 @@ export function normalizePool(pool, liquidityResponse) {
 		address: pool.address || pool.contractAddress || '',
 		assets: extractAssets(pool, liquidity),
 		liquidity,
+		liquidityComplete: true,
 		fees: {
-			swapFee: pool.spreadFactor || pool.poolParams?.swapFee || '',
-			exitFee: pool.poolParams?.exitFee || '',
+			swapFee: decimalFromAtomic(pool.spreadFactor || pool.poolParams?.swapFee || ''),
+			exitFee: decimalFromAtomic(pool.poolParams?.exitFee || ''),
 		},
 	};
 }
 
 function hasLiquidity(pool) {
-	return Object.keys(pool?.liquidity || {}).length > 0;
+	return pool?.liquidityComplete === true || Object.keys(pool?.liquidity || {}).length > 0;
 }
 
 export function selectPoolUpdates(allPools, currentPools, mode) {
 	if (mode === 'fresh') return allPools;
 	const currentById = new Map(currentPools.map(pool => [String(pool.id), pool]));
 	return allPools.filter(pool => !hasLiquidity(currentById.get(String(pool.id || pool.poolId))));
+}
+
+// Reuse AllPools metadata during partial runs while preserving saved live liquidity.
+export function refreshPoolMetadata(allPools, currentPools) {
+	const rawById = new Map(allPools.map(pool => [String(pool.id || pool.poolId), pool]));
+	return currentPools.map(current => {
+		const raw = rawById.get(String(current.id));
+		if (!raw) return current;
+		const metadata = normalizePool(raw, { liquidity: Object.values(current.liquidity || {}) });
+		return {
+			...current,
+			type: metadata.type,
+			address: metadata.address || current.address,
+			assets: Object.keys(metadata.assets).length > 0 ? metadata.assets : current.assets,
+			fees: metadata.fees,
+		};
+	});
 }

@@ -70,3 +70,7 @@ test('reflects every concrete pool type returned in pool-manager Any values', ()
 		'osmosis.cosmwasmpool.v1beta1.CosmWasmPool',
 	]));
 });
+
+test('reflects the Tendermint IBC client state returned by ClientState queries', () => {
+	expect(reflectedSymbols).toContain('ibc.lightclients.tendermint.v1.ClientState');
+});

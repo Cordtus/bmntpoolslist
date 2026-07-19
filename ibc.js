@@ -24,6 +24,11 @@ function traceEntries(cache) {
 	return cache?.entries || cache || {};
 }
 
+function ibcHashFromDenom(denom) {
+	const match = /^ibc\/([0-9a-f]{64})$/i.exec(String(denom));
+	return match?.[1].toUpperCase();
+}
+
 function collectIbcHashes(pools) {
 	const hashes = new Set();
 	for (const pool of pools) {
@@ -32,10 +37,24 @@ function collectIbcHashes(pools) {
 			...Object.values(pool.liquidity || {}).map(entry => entry?.denom),
 		];
 		for (const denom of denoms) {
-			if (String(denom).startsWith('ibc/')) hashes.add(String(denom).slice(4));
+			const hash = ibcHashFromDenom(denom);
+			if (hash) hashes.add(hash);
 		}
 	}
 	return hashes;
+}
+
+function isTerminalTraceError(error) {
+	return error?.code === 3 || error?.code === 5 ||
+		/\b(not[_ ]?found|invalid[_ ]?argument)\b/i.test(error?.message || error?.rawMessage || '');
+}
+
+function unresolvedTrace(hash) {
+	return {
+		hash,
+		trace: null,
+		resolution: 'not_found',
+	};
 }
 
 async function resolveSourceChain(channelId, channels, grpc) {
@@ -84,16 +103,25 @@ export async function buildIbcCache({ pools, denoms = {}, channels = {}, grpc, r
 	), retryOptions);
 	const tracesByHash = Object.fromEntries(traces.map(trace => [ibcHash(trace), trace]));
 	const tracesForMissingHashes = await collectWithAdaptiveConcurrency(missingHashes, async hash => {
-		const trace = tracesByHash[hash] || (await grpc.call(
-			'ibc.applications.transfer.v1.Query',
-			'DenomTrace',
-			{ hash },
-		)).denomTrace;
-		if (!trace) throw new Error(`IBC denom trace ${hash} was not found`);
+		let trace = tracesByHash[hash];
+		if (!trace) {
+			try {
+				trace = (await grpc.call(
+					'ibc.applications.transfer.v1.Query',
+					'DenomTrace',
+					{ hash },
+				)).denomTrace;
+			} catch (error) {
+				if (isTerminalTraceError(error)) return unresolvedTrace(hash);
+				throw error;
+			}
+		}
+		if (!trace) return unresolvedTrace(hash);
 		return { hash, trace };
 	}, retryOptions);
 
 	const sourceChannelIds = [...new Set(tracesForMissingHashes
+		.filter(({ trace }) => trace)
 		.map(({ trace }) => parseChannelIds(trace.path)[0])
 		.filter(channelId => channelId && !cachedChannels[channelId]))];
 	const sources = await collectWithAdaptiveConcurrency(sourceChannelIds, channelId => (
@@ -103,7 +131,17 @@ export async function buildIbcCache({ pools, denoms = {}, channels = {}, grpc, r
 		cachedChannels[sourceChannelIds[index]] = sources[index];
 	}
 
-	for (const { hash, trace } of tracesForMissingHashes) {
+	for (const { hash, trace, resolution } of tracesForMissingHashes) {
+		if (!trace) {
+			cachedDenoms[hash] = {
+				baseDenom: null,
+				path: null,
+				channelIds: [],
+				sourceChainId: null,
+				resolution,
+			};
+			continue;
+		}
 		const channelIds = parseChannelIds(trace.path);
 		const sourceChannelId = channelIds[0];
 		const source = sourceChannelId ? cachedChannels[sourceChannelId] : { sourceChainId: null };

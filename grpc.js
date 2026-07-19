@@ -9,6 +9,7 @@ export const reflectedSymbols = [
 	'ibc.core.channel.v1.Query',
 	'ibc.core.connection.v1.Query',
 	'ibc.core.client.v1.Query',
+	'ibc.lightclients.tendermint.v1.ClientState',
 	'osmosis.gamm.v1beta1.Pool',
 	'osmosis.gamm.poolmodels.stableswap.v1beta1.Pool',
 	'osmosis.concentratedliquidity.v1beta1.Pool',
